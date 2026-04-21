@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 0, 0, 0;
+  --background-end-rgb: 0, 0, 0;
+  --obsidian-main: #000000;
+  --obsidian-card: #0D0D0D;
+  --performance-accent: #A855F7;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-start-rgb));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  ::selection {
+    background: rgba(168, 85, 247, 0.3);
+    color: white;
+  }
+}
+
+@utility glass {
+  background-color: rgba(13, 13, 13, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+@utility obsidian-card {
+  background-color: var(--obsidian-card);
+  border: 1px solid #1A1A1A;
+  transition: all 0.3s ease;
+}
+
+/* Hover state for obsidian-card (plain CSS — @utility doesn't support pseudo-selectors) */
+.obsidian-card:hover {
+  border-color: rgba(168, 85, 247, 0.5);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1A1A1A;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #A855F7;
+}
+
+/* FullCalendar Customization */
+.fc {
+  --fc-button-bg-color: #A855F7;
+  --fc-button-border-color: #A855F7;
+  --fc-button-hover-bg-color: #9333EA;
+  --fc-button-hover-border-color: #9333EA;
+  --fc-button-active-bg-color: #7E22CE;
+  --fc-button-active-border-color: #7E22CE;
+  --fc-today-bg-color: rgba(168, 85, 247, 0.1);
+  border: none !important;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+  border: 1px solid #1A1A1A !important;
+}
+
+.fc .fc-toolbar-title {
+  font-weight: 900 !important;
+  font-size: 1.25rem !important;
+  color: #FFFFFF !important;
+}
+
+.fc .fc-col-header-cell-cushion {
+  font-weight: 700 !important;
+  text-transform: uppercase !important;
+  font-size: 0.75rem !important;
+  letter-spacing: 0.05em !important;
+  color: #A1A1AA !important;
+  padding: 1rem 0 !important;
+}
+
+.fc-event {
+  border: none !important;
+  padding: 2px 4px !important;
+  border-radius: 6px !important;
+  font-weight: 700 !important;
+  font-size: 0.75rem !important;
+}
