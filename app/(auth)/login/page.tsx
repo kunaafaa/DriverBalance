@@ -4,6 +4,7 @@ import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { Car, Lock, Mail, ChevronRight, AlertCircle } from "lucide-react";
 import Logo from "@/components/Logo";
+import { validateCredentials } from "./actions";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -18,39 +19,40 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      const result = await signIn("credentials", {
-        email,
-        password,
-        // Pass a client-side identifier for rate limiting
-        clientIp: email,
-        redirect: false, // Handle redirect manually for better error UX
-      });
+      // ── Step 1: Validate credentials on the SERVER first ──
+      // This runs as a Next.js Server Action — password hash comparison
+      // happens entirely server-side, bypassing any NextAuth beta bugs.
+      const verification = await validateCredentials(email, password);
 
-      // NextAuth v5 beta: thrown errors from authorize() arrive in result.error
-      // or result.code. Check for all failure indicators.
-      if (result?.error) {
+      if (!verification.success) {
         setLoading(false);
 
-        if (result.error === "TOO_MANY_ATTEMPTS" || result.code === "TOO_MANY_ATTEMPTS") {
+        if (verification.error === "TOO_MANY_ATTEMPTS") {
           setError("Too many failed attempts. Please wait 15 minutes before trying again.");
           return;
         }
 
-        // INVALID_CREDENTIALS or any other error
         setAttempts((prev) => prev + 1);
         setError("Invalid credentials. Please check your email and password.");
         return;
       }
 
-      // Extra safety: if ok is not explicitly true, treat as failure
-      if (!result?.ok) {
-        setAttempts((prev) => prev + 1);
-        setError("Invalid credentials. Please check your email and password.");
+      // ── Step 2: Credentials are valid — create the NextAuth session ──
+      const result = await signIn("credentials", {
+        email,
+        password,
+        clientIp: email,
+        redirect: false,
+      });
+
+      if (result?.error || !result?.ok) {
+        // This shouldn't happen since we pre-validated, but handle it anyway
+        setError("Session creation failed. Please try again.");
         setLoading(false);
         return;
       }
 
-      // Success — redirect to dashboard
+      // ── Step 3: Success — redirect to dashboard ──
       window.location.href = "/";
     } catch {
       setError("A system error occurred. Please try again later.");
