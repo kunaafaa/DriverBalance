@@ -74,7 +74,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         clientIp: { label: "Client IP", type: "text" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) return null;
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error("INVALID_CREDENTIALS");
+        }
 
         const email = String(credentials.email).toLowerCase().trim();
         const password = String(credentials.password);
@@ -83,7 +85,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // 1. Rate limit check
         if (isRateLimited(clientIp)) {
           console.warn(`[AUTH] Rate limit exceeded for: ${clientIp}`);
-          // Throw a specific error message NextAuth will pass through
           throw new Error("TOO_MANY_ATTEMPTS");
         }
 
@@ -94,17 +95,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!allowedEmails.includes(email)) {
           console.warn(`[AUTH] Unknown email attempted: ${email}`);
-          return null;
+          throw new Error("INVALID_CREDENTIALS");
         }
 
         // 3. Password verification (timing-safe SHA256 hash comparison)
         // CRM_PASSWORD_HASH must be the SHA256 hex digest of the master password
-        const storedHash = process.env.CRM_PASSWORD_HASH || "";
-        const passwordValid = verifyPassword(password, storedHash);
+        const storedHash = (process.env.CRM_PASSWORD_HASH || "").trim();
+
+        if (!storedHash) {
+          console.error("[AUTH] CRM_PASSWORD_HASH is not configured!");
+          throw new Error("INVALID_CREDENTIALS");
+        }
+
+        const passwordValid = await verifyPassword(password, storedHash);
 
         if (!passwordValid) {
           console.warn(`[AUTH] Invalid password for: ${email}`);
-          return null;
+          throw new Error("INVALID_CREDENTIALS");
         }
 
         // 4. Success — clear rate limit record

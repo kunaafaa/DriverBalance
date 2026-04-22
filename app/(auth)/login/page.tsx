@@ -26,15 +26,25 @@ export default function LoginPage() {
         redirect: false, // Handle redirect manually for better error UX
       });
 
-      if (result?.error === "TOO_MANY_ATTEMPTS") {
-        setError("Too many failed attempts. Please wait 15 minutes before trying again.");
+      // NextAuth v5 beta: thrown errors from authorize() arrive in result.error
+      // or result.code. Check for all failure indicators.
+      if (result?.error) {
         setLoading(false);
+
+        if (result.error === "TOO_MANY_ATTEMPTS" || result.code === "TOO_MANY_ATTEMPTS") {
+          setError("Too many failed attempts. Please wait 15 minutes before trying again.");
+          return;
+        }
+
+        // INVALID_CREDENTIALS or any other error
+        setAttempts((prev) => prev + 1);
+        setError("Invalid credentials. Please check your email and password.");
         return;
       }
 
-      if (result?.error || !result?.ok) {
+      // Extra safety: if ok is not explicitly true, treat as failure
+      if (!result?.ok) {
         setAttempts((prev) => prev + 1);
-        // Generic message — never reveal which field is wrong
         setError("Invalid credentials. Please check your email and password.");
         setLoading(false);
         return;
