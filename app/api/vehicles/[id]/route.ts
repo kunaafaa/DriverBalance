@@ -5,7 +5,7 @@ import { requireAuth, checkRateLimit, sanitizeBody, log, secureJson } from "@/li
 const ALLOWED_VEHICLE_FIELDS = [
   "customer_id", "make", "model", "year", "license_plate",
   "vin", "color", "mileage", "notes",
-] as const;
+];
 
 export async function GET(
   request: NextRequest,

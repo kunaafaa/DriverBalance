@@ -31,8 +31,8 @@ export default function AppointmentForm({ initialData, onSubmit, onCancel, defau
     control,
     formState: { errors, isSubmitting },
   } = useForm<AppointmentFormData>({
-    resolver: zodResolver(appointmentSchema),
-    defaultValues: initialData || {
+    resolver: zodResolver(appointmentSchema) as any,
+    defaultValues: (initialData as any) || {
       scheduled_date: defaultDate || new Date().toISOString().slice(0, 16),
       estimated_duration_minutes: 60,
       services: [],
@@ -43,6 +43,11 @@ export default function AppointmentForm({ initialData, onSubmit, onCancel, defau
     control,
     name: "customer_id",
   });
+
+  const watchedServices = useWatch({
+    control,
+    name: "services",
+  }) || [];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -152,36 +157,47 @@ export default function AppointmentForm({ initialData, onSubmit, onCancel, defau
             Service Packages
           </label>
           <div className="grid grid-cols-1 gap-3 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
-            {services.map((service) => (
-              <label 
-                key={service.id}
-                className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all group ${
-                  (register("services").value || []).includes(service.id) 
-                    ? "bg-[#A855F7] border-[#A855F7] text-white shadow-lg shadow-[#A855F7]/20" 
-                    : "bg-[#0D0D0D] border-[#1A1A1A] hover:border-[#A855F7]/50"
-                }`}
-              >
-                <div className="flex items-center">
-                  <input 
-                    type="checkbox" 
-                    value={service.id} 
-                    {...register("services")} 
-                    className="hidden" 
-                  />
-                  <div>
-                    <p className="text-sm font-black leading-none">{service.name}</p>
-                    <p className={`text-[10px] font-bold mt-1 uppercase tracking-widest ${
-                      (register("services").value || []).includes(service.id) ? "text-blue-200" : "text-gray-400"
-                    }`}>
-                      AED {service.base_price} • {service.estimated_duration_minutes}m
-                    </p>
-                  </div>
-                </div>
-                <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-1 ${
-                   (register("services").value || []).includes(service.id) ? "text-white" : "text-gray-200"
-                }`} />
-              </label>
-            ))}
+            {[...services]
+              .sort((a, b) => {
+                const aOther = a.name.toLowerCase().includes("other");
+                const bOther = b.name.toLowerCase().includes("other");
+                if (aOther && !bOther) return 1;
+                if (!aOther && bOther) return -1;
+                return a.name.localeCompare(b.name);
+              })
+              .map((service) => {
+                const isSelected = watchedServices.includes(service.id);
+                return (
+                  <label 
+                    key={service.id}
+                    className={`flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all group ${
+                      isSelected 
+                        ? "bg-[#A855F7] border-[#A855F7] text-white shadow-lg shadow-[#A855F7]/20" 
+                        : "bg-[#0D0D0D] border-[#1A1A1A] hover:border-[#A855F7]/50"
+                    }`}
+                  >
+                    <div className="flex items-center">
+                      <input 
+                        type="checkbox" 
+                        value={service.id} 
+                        {...register("services")} 
+                        className="hidden" 
+                      />
+                      <div>
+                        <p className="text-sm font-black leading-none">{service.name}</p>
+                        <p className={`text-[10px] font-bold mt-1 uppercase tracking-widest ${
+                          isSelected ? "text-blue-200" : "text-gray-400"
+                        }`}>
+                          {service.base_price > 0 ? `AED ${service.base_price}` : "Custom Price"} • {service.estimated_duration_minutes}m
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight className={`w-4 h-4 transition-transform group-hover:translate-x-1 ${
+                      isSelected ? "text-white" : "text-gray-200"
+                    }`} />
+                  </label>
+                );
+              })}
             {services.length === 0 && (
               <div className="py-10 text-center bg-[#111111] rounded-2xl border border-dashed border-[#222222] text-gray-400 text-xs font-bold">
                 No service packages defined.

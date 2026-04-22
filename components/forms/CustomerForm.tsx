@@ -20,7 +20,7 @@ export default function CustomerForm({ initialData, onSubmit, onCancel }: Custom
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<CustomerFormData>({
-    resolver: zodResolver(customerSchema),
+    resolver: zodResolver(customerSchema) as any,
     defaultValues: initialData || {
       city: "Abu Dhabi",
     },

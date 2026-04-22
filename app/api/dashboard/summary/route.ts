@@ -28,10 +28,14 @@ export async function GET(request: NextRequest) {
       .filter(inv => inv.status === "paid")
       .reduce((acc, inv) => acc + (inv.total || 0), 0);
 
-    // 2. Fetch Historical Revenue (Last 6 Months)
+    // 2. Fetch Historical Revenue (Dynamic Range)
+    const url = new URL(request.url);
+    const range = url.searchParams.get("range") || "6m";
+    const monthCount = range === "1y" ? 12 : 6;
+    
     const now = new Date();
-    const months = [];
-    for (let i = 5; i >= 0; i--) {
+    const months: { name: string, year: number, month: number, revenue: number }[] = [];
+    for (let i = monthCount - 1; i >= 0; i--) {
       const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
       months.push({
         name: d.toLocaleString('en-US', { month: 'short' }),

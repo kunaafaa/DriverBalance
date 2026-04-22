@@ -20,7 +20,7 @@ export default function InventoryForm({ initialData, onSubmit, onCancel }: Inven
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<InventoryFormData>({
-    resolver: zodResolver(inventorySchema),
+    resolver: zodResolver(inventorySchema) as any,
     defaultValues: initialData || {
       category: "Parts",
       quantity_in_stock: 0,

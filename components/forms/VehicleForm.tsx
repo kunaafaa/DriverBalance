@@ -21,8 +21,8 @@ export default function VehicleForm({ initialData, customers, onSubmit, onCancel
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<VehicleFormData>({
-    resolver: zodResolver(vehicleSchema),
-    defaultValues: initialData || {
+    resolver: zodResolver(vehicleSchema) as any,
+    defaultValues: (initialData as any) || {
       engine_type: "Petrol",
       mileage_at_registration: 0,
       current_mileage: 0,

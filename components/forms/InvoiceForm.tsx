@@ -28,7 +28,7 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
     setValue,
     formState: { errors, isSubmitting },
   } = useForm<InvoiceFormData>({
-    resolver: zodResolver(invoiceSchema),
+    resolver: zodResolver(invoiceSchema) as any,
     defaultValues: initialData || {
       invoice_number: `INV-${Date.now().toString().slice(-6)}`,
       issue_date: new Date().toISOString().split("T")[0],

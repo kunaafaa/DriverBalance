@@ -2,14 +2,16 @@
 
 import { useSession } from "next-auth/react";
 import { Bell, Search, User, Menu } from "lucide-react";
+import Logo from "./Logo";
 
 export default function Navbar() {
   const { data: session } = useSession();
 
   return (
     <header className="h-20 bg-[#0D0D0D] border-b border-[#1A1A1A] flex items-center justify-between px-8 z-10">
-      <div className="flex items-center md:hidden">
+      <div className="flex items-center md:hidden space-x-4">
         <Menu className="w-6 h-6 text-gray-400" />
+        <Logo iconOnly className="scale-75" />
       </div>
 
       <div className="hidden md:flex items-center bg-[#111111] rounded-2xl px-4 py-2 w-96 border border-[#1A1A1A] focus-within:ring-2 focus-within:ring-[#A855F7]/30 transition-all">

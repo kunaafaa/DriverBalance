@@ -8,7 +8,9 @@ import axios from "axios";
 import { useEffect, useState } from "react";
 import { Customer } from "@/lib/types";
 
-export default function NewVehiclePage() {
+import { Suspense } from "react";
+
+function VehicleContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preSelectedCustomer = searchParams.get("customer_id");
@@ -58,5 +60,13 @@ export default function NewVehiclePage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function NewVehiclePage() {
+  return (
+    <Suspense fallback={<div className="text-white font-bold p-10">Loading vehicle registration...</div>}>
+      <VehicleContent />
+    </Suspense>
   );
 }

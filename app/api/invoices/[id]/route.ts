@@ -6,7 +6,7 @@ const ALLOWED_INVOICE_FIELDS = [
   "customer_id", "appointment_id", "issue_date", "due_date",
   "status", "payment_method", "notes",
   "tax_rate", "discount", "subtotal", "tax_amount", "total",
-] as const;
+];
 
 export async function GET(
   request: NextRequest,

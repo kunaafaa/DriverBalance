@@ -4,28 +4,32 @@ import { useEffect, useState } from "react";
 import { Invoice } from "@/lib/types";
 import { Plus, Search, FileText, Download } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 import { formatCurrency, formatDate } from "@/lib/utils/formatting";
 
 export default function InvoicesPage() {
+  const router = useRouter();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
-  const fetchInvoices = async () => {
+  const fetchInvoices = async (isMounted = true) => {
     setLoading(true);
     try {
       const { data } = await axios.get("/api/invoices");
-      setInvoices(data);
+      if (isMounted) setInvoices(data);
     } catch (error) {
       console.error("Failed to fetch invoices", error);
     } finally {
-      setLoading(false);
+      if (isMounted) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchInvoices();
+    let isMounted = true;
+    fetchInvoices(isMounted);
+    return () => { isMounted = false; };
   }, []);
 
   return (
@@ -64,7 +68,11 @@ export default function InvoicesPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {invoices.map((invoice) => (
-                  <tr key={invoice.id} className="hover:bg-[#9333EA]/10/20 transition-all cursor-pointer" onClick={() => window.location.href = `/invoices/${invoice.id}`}>
+                  <tr 
+                    key={invoice.id} 
+                    className="hover:bg-[#9333EA]/10 transition-all cursor-pointer" 
+                    onClick={() => router.push(`/invoices/${invoice.id}`)}
+                  >
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <FileText className="w-4 h-4 text-[#A855F7] mr-2" />

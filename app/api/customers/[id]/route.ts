@@ -4,7 +4,7 @@ import { requireAuth, checkRateLimit, sanitizeBody, log, secureJson } from "@/li
 
 const ALLOWED_CUSTOMER_FIELDS = [
   "name", "email", "phone", "address", "city", "postal_code", "notes",
-] as const;
+];
 
 export async function GET(
   request: NextRequest,

@@ -3,6 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { Car, Lock, Mail, ChevronRight, AlertCircle } from "lucide-react";
+import Logo from "@/components/Logo";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -56,11 +57,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md relative z-10">
         <div className="bg-[#0D0D0D] rounded-[40px] p-12 shadow-2xl shadow-black/50 overflow-hidden relative">
           {/* Brand */}
-          <div className="text-center mb-12">
-            <div className="w-16 h-16 bg-[#A855F7] rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[#A855F7]/30">
-              <Car className="text-white w-8 h-8" />
-            </div>
-            <h1 className="text-3xl font-black tracking-tighter text-white">DRIVERMADE</h1>
+          <div className="flex flex-col items-center mb-12">
+            <Logo className="mb-2" />
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em] mt-2">Workshop Management Suite</p>
           </div>
 

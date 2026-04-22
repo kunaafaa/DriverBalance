@@ -12,7 +12,7 @@ export const generateInvoicePDF = (
   // Header
   doc.setFontSize(22);
   doc.setTextColor(15, 23, 42); // slate-900
-  doc.text("DRIVERMADE", margin, 25);
+  doc.text("DRIVERBALANCE", margin, 25);
   doc.setFontSize(10);
   doc.setTextColor(37, 99, 235); // blue-600
   doc.text("AUTO SERVICE & MAINTENANCE", margin, 31);

@@ -5,27 +5,31 @@ import CalendarView from "@/components/appointments/CalendarView";
 import { Appointment } from "@/lib/types";
 import { Plus, List, Calendar as CalendarIcon } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import axios from "axios";
 
 export default function AppointmentsPage() {
+  const router = useRouter();
   const [appointments, setAppointments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"calendar" | "list">("calendar");
 
-  const fetchAppointments = async () => {
+  const fetchAppointments = async (isMounted = true) => {
     setLoading(true);
     try {
       const { data } = await axios.get("/api/appointments");
-      setAppointments(data);
+      if (isMounted) setAppointments(data);
     } catch (error) {
       console.error("Failed to fetch appointments", error);
     } finally {
-      setLoading(false);
+      if (isMounted) setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAppointments();
+    let isMounted = true;
+    fetchAppointments(isMounted);
+    return () => { isMounted = false; };
   }, []);
 
   const handleEventDrop = async (id: string, newDate: Date) => {
@@ -79,8 +83,8 @@ export default function AppointmentsPage() {
       ) : viewMode === "calendar" ? (
         <CalendarView
           appointments={appointments}
-          onEventClick={(id) => (window.location.href = `/appointments/${id}`)}
-          onDateClick={(date) => (window.location.href = `/appointments/new?date=${date.toISOString()}`)}
+          onEventClick={(id) => router.push(`/appointments/${id}`)}
+          onDateClick={(date) => router.push(`/appointments/new?date=${date.toISOString()}`)}
           onEventDrop={handleEventDrop}
         />
       ) : (

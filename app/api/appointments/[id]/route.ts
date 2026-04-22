@@ -5,7 +5,7 @@ import { requireAuth, checkRateLimit, sanitizeBody, log, secureJson } from "@/li
 const ALLOWED_APPOINTMENT_FIELDS = [
   "customer_id", "vehicle_id", "scheduled_date",
   "estimated_duration_minutes", "status", "notes",
-] as const;
+];
 
 export async function GET(
   request: NextRequest,

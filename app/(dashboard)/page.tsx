@@ -38,25 +38,48 @@ const data = [
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [timeRange, setTimeRange] = useState("6m");
 
   useEffect(() => {
+    let isMounted = true;
     const fetchDashboardData = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        const { data: summary } = await axios.get("/api/dashboard/summary");
-        setData(summary);
-      } catch (error) {
-        console.error("Failed to fetch dashboard data", error);
+        const { data: summary } = await axios.get(`/api/dashboard/summary?range=${timeRange}`);
+        if (isMounted) setData(summary);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data", err);
+        if (isMounted) setError("Failed to load dashboard data. Please try again later.");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
     fetchDashboardData();
-  }, []);
+    return () => { isMounted = false; };
+  }, [timeRange]);
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-[60vh]">
       <div className="w-12 h-12 border-4 border-[#A855F7] border-t-transparent rounded-full animate-spin"></div>
       <p className="mt-4 text-gray-500 font-bold">Initializing DriverBalance intelligence...</p>
+    </div>
+  );
+
+  if (error) return (
+    <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+      <div className="p-4 bg-red-500/10 rounded-2xl border border-red-500/20 mb-4">
+        <DollarSign className="w-8 h-8 text-red-500" />
+      </div>
+      <h3 className="text-xl font-bold text-white mb-2">Sync Error</h3>
+      <p className="text-gray-400 max-w-md">{error}</p>
+      <button 
+        onClick={() => setTimeRange(timeRange)} // Re-trigger effect
+        className="mt-6 px-6 py-2 bg-[#A855F7] text-white rounded-xl font-bold hover:bg-[#9333EA] transition-all"
+      >
+        Retry Sync
+      </button>
     </div>
   );
 
@@ -104,9 +127,13 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 bg-[#0D0D0D] p-8 rounded-3xl border border-[#1A1A1A] shadow-xl shadow-black/50">
           <div className="flex items-center justify-between mb-8">
             <h3 className="text-lg font-black text-white tracking-tight">Revenue Analytics</h3>
-            <select className="bg-[#111111] border-none outline-none rounded-xl px-4 py-2 text-xs font-bold text-gray-400">
-              <option>Last 6 Months</option>
-              <option>Last Year</option>
+            <select 
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="bg-[#111111] border-none outline-none rounded-xl px-4 py-2 text-xs font-bold text-gray-400 cursor-pointer hover:bg-[#1A1A1A] transition-colors"
+            >
+              <option value="6m">Last 6 Months</option>
+              <option value="1y">Last Year</option>
             </select>
           </div>
           <div className="h-80 w-full">

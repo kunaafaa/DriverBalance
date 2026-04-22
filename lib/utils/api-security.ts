@@ -79,7 +79,7 @@ export function checkRateLimit(
 // ---------------------------------------------------------------------------
 export async function requireAuth(
   request: NextRequest
-): Promise<{ session: Awaited<ReturnType<typeof auth>>; error: null } | { session: null; error: NextResponse }> {
+): Promise<{ session: any; error: null } | { session: null; error: NextResponse }> {
   const session = await auth();
   if (!session?.user) {
     log("UNAUTH", "Unauthorized API access attempt", request);

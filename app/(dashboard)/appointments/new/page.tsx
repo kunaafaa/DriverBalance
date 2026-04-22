@@ -6,7 +6,9 @@ import { ChevronLeft } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 
-export default function NewAppointmentPage() {
+import { Suspense } from "react";
+
+function AppointmentContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dateParam = searchParams.get("date");
@@ -42,5 +44,13 @@ export default function NewAppointmentPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function NewAppointmentPage() {
+  return (
+    <Suspense fallback={<div className="text-white font-bold p-10">Loading form...</div>}>
+      <AppointmentContent />
+    </Suspense>
   );
 }

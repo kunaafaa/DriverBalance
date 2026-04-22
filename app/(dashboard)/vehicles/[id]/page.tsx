@@ -8,8 +8,6 @@ import {
   Car, 
   User, 
   Calendar, 
-  Settings, 
-  Tool, 
   ChevronLeft,
   History,
   Activity,

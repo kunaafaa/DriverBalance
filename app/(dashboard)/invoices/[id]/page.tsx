@@ -16,6 +16,7 @@ import {
   Trash2
 } from "lucide-react";
 import Link from "next/link";
+import Logo from "@/components/Logo";
 import { formatCurrency, formatDate } from "@/lib/utils/formatting";
 
 export default function InvoiceDetailPage() {
@@ -145,9 +146,8 @@ export default function InvoiceDetailPage() {
         <div className="h-4 bg-[#111827] w-full shrink-0 border-t-[16px] border-[#A855F7]"></div>
 
         <div className="flex-1 p-10 md:p-16 print:p-8 flex flex-col">
-          {/* Header Section */}
           <div className="mb-8 print:mb-6 text-sm text-[#111827]">
-            <h2 className="text-xl font-bold mb-2">DRIVERMADE<span className="text-gray-500">.CO</span></h2>
+            <Logo variant="dark" className="mb-2" />
             <div className="space-y-1">
               <p>Industrial Area 1</p>
               <p>Abu Dhabi, UAE</p>

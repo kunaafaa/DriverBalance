@@ -6,7 +6,7 @@ import { SessionProvider } from "next-auth/react";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DriverMade CRM | Abu Dhabi",
+  title: "DriverBalance CRM | Abu Dhabi",
   description: "High-performance workshop management suite for DriverMade.co",
 };
 

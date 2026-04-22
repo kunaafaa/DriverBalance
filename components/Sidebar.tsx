@@ -13,6 +13,7 @@ import {
   LogOut
 } from "lucide-react";
 import { signOut } from "next-auth/react";
+import Logo from "./Logo";
 
 const menuItems = [
   { name: "Dashboard", icon: BarChart2, href: "/" },
@@ -29,15 +30,7 @@ export default function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-72 bg-[#0D0D0D] border-r border-[#1A1A1A] z-20">
       <div className="p-8">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-[#A855F7] rounded-xl flex items-center justify-center shadow-lg shadow-[#A855F7]/20">
-            <Car className="text-white w-6 h-6" />
-          </div>
-          <div>
-            <h1 className="text-xl font-black tracking-tighter text-white">DriverBalance</h1>
-            <p className="text-[10px] font-bold text-white uppercase tracking-widest leading-none">Workshop CRM</p>
-          </div>
-        </div>
+        <Logo />
       </div>
 
       <nav className="flex-1 px-4 space-y-1">
