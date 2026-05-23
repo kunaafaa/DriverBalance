@@ -10,7 +10,7 @@ create extension if not exists "uuid-ossp";
 create table if not exists customers (
   id uuid primary key default uuid_generate_v4(),
   name text not null,
-  email text unique not null,
+  email text,
   phone text unique not null,
   address text,
   city text default 'Abu Dhabi',
