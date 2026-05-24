@@ -24,16 +24,40 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
 
   const { id } = await params;
   const supabase = createClient();
-  const body = await request.json();
+  const { items, id: _id, created_at: _ca, quotation_items: _qi, ...quotationFields } = await request.json();
 
   const { data, error } = await supabase
     .from("quotations")
-    .update({ ...body, updated_at: new Date().toISOString() })
+    .update({ ...quotationFields, updated_at: new Date().toISOString() })
     .eq("id", id)
     .select()
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  if (items !== undefined) {
+    const { error: deleteError } = await supabase
+      .from("quotation_items")
+      .delete()
+      .eq("quotation_id", id);
+
+    if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 400 });
+
+    if (items.length > 0) {
+      const { error: insertError } = await supabase
+        .from("quotation_items")
+        .insert(
+          items.map(({ id: _id, created_at: _ca, quotation_id: _qid, ...item }: Record<string, unknown>) => ({
+            ...item,
+            quotation_id: id,
+            total: Number(item.quantity) * Number(item.unit_price),
+          }))
+        );
+
+      if (insertError) return NextResponse.json({ error: insertError.message }, { status: 400 });
+    }
+  }
+
   return NextResponse.json(data);
 }
 

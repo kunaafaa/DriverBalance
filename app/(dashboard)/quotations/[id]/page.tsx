@@ -105,6 +105,13 @@ export default function QuotationDetailPage() {
             <Download className="w-4 h-4 mr-2 text-[#A855F7]" />
             PDF
           </button>
+          <Link
+            href={`/quotations/${id}/edit`}
+            className="px-4 py-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-sm flex items-center hover:bg-[#111111] transition-all"
+          >
+            <ClipboardList className="w-4 h-4 mr-2 text-[#A855F7]" />
+            Edit
+          </Link>
           <button
             onClick={handleDelete}
             className="px-4 py-2 bg-[#0D0D0D] border border-red-100 rounded-xl text-red-600 font-bold text-sm flex items-center hover:bg-red-50 transition-all"
@@ -112,7 +119,7 @@ export default function QuotationDetailPage() {
             <Trash2 className="w-4 h-4 mr-2" />
             Delete
           </button>
-          {quotation.status === "draft" || quotation.status === "sent" ? (
+          {(quotation.status === "draft" || quotation.status === "sent") && (
             <>
               <button
                 onClick={handleMarkAccepted}
@@ -129,7 +136,7 @@ export default function QuotationDetailPage() {
                 Mark Rejected
               </button>
             </>
-          ) : null}
+          )}
         </div>
       </div>
 
