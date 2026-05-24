@@ -103,7 +103,7 @@ export default function InvoiceDetailPage() {
             <Download className="w-4 h-4 mr-2 text-[#A855F7]" />
             PDF
           </button>
-          
+
           <Link
             href={`/invoices/${id}/edit`}
             className="px-4 py-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center hover:bg-[#111111]"
@@ -111,7 +111,7 @@ export default function InvoiceDetailPage() {
             <FileText className="w-4 h-4 mr-2 text-[#A855F7]" />
             Edit
           </Link>
-          
+
           <button
             onClick={handleDelete}
             className="px-4 py-2 bg-[#0D0D0D] border border-red-100 rounded-xl text-red-600 font-bold text-sm shadow-sm hover:bg-red-50 hover:shadow-md transition-all flex items-center"
@@ -134,29 +134,47 @@ export default function InvoiceDetailPage() {
       {/* Invoice Document */}
       {/* Invoice Document - Classic Corporate Design */}
       <div className="bg-white shadow-black/50 print:shadow-none print:shadow-none print:border-none max-w-[800px] mx-auto relative flex flex-col" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
-        
+
         <style>{`
           @media print {
-            @page { size: A4; margin: 10mm; }
+            @page { size: A4; margin: 6mm; }
             body { -webkit-print-color-adjust: exact; }
           }
         `}</style>
-        
-        {/* Top Blue Bar */}
-        <div className="h-4 bg-[#111827] w-full shrink-0 border-t-[16px] border-[#A855F7]"></div>
 
-        <div className="flex-1 p-10 md:p-16 print:p-8 flex flex-col">
-          <div className="mb-8 print:mb-6 text-sm text-[#111827]">
-            <Logo variant="dark" className="mb-2" />
-            <div className="space-y-1">
-              <p>Industrial Area 1</p>
-              <p>Abu Dhabi, UAE</p>
-              <p className="mt-1 text-xs text-gray-500">TRN: 100234567800003</p>
+        {/* Top Purple Bar */}
+        <div className="h-4 bg-[#111827] w-full shrink-0 border-t-[16px] border-[#A855F7]"></div>
+        {/* Logo + Address */}
+        <div className="flex-1 p-10 md:p-16 print:p-4 flex flex-col">
+          <div className="mb-8 print:mb-6 text-sm text-[#111827] flex justify-between items-center">
+            <div className="flex items-center gap-3">
+              <img
+                src="/sixth-gear-logo.png"
+                alt="Sixth Gear Garage"
+                width={64}
+                height={64}
+                className="object-contain"
+              />
+              <div className="flex flex-col">
+                <span className="text-xl font-black tracking-tighter leading-none text-[#0D0D0D]">
+                  Sixth Gear Garage
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-widest mt-1 text-gray-500">
+                  Abu Dhabi, UAE
+                </span>
+              </div>
             </div>
+            <img
+              src="/dm.png"
+              alt="Logo"
+              width={100}
+              height={100}
+              className="object-contain"
+            />
           </div>
 
           {/* Two Column Info Section */}
-          <div className="flex justify-between mb-8 print:mb-6 text-sm text-[#111827]">
+          <div className="flex justify-between mb-8 print:mb-3 text-sm text-[#111827]">
             <div className="w-1/2 pr-4">
               <h3 className="font-bold uppercase mb-2 text-xs">BILL TO</h3>
               <div className="space-y-1 text-xs">
@@ -197,21 +215,21 @@ export default function InvoiceDetailPage() {
           <table className="w-full text-[#111827] text-sm mb-6 print:mb-4">
             <thead>
               <tr className="border-b-2 border-[#A855F7] text-xs">
-                <th className="py-2 text-left font-bold uppercase w-12">QTY</th>
+                <th className="py-2 text-left font-bold uppercase w-12">SR.NO</th>
                 <th className="py-2 text-left font-bold uppercase">DESCRIPTION</th>
+                <th className="py-2 text-left font-bold uppercase w-12">QTY</th>
                 <th className="py-2 text-right font-bold uppercase w-28">UNIT PRICE</th>
                 <th className="py-2 text-right font-bold uppercase w-28">AMOUNT</th>
               </tr>
             </thead>
             <tbody>
-              {invoice.invoice_items?.map((item) => (
-                <tr key={item.id} className="border-b border-gray-200 last:border-0 hover:bg-[#111111]/50">
-                  <td className="py-2 text-left">{item.quantity}</td>
-                  <td className="py-2 text-left font-medium">
-                    {item.description}
-                  </td>
-                  <td className="py-2 text-right">{formatCurrency(item.unit_price)}</td>
-                  <td className="py-2 text-right">{formatCurrency(item.total)}</td>
+              {invoice.invoice_items?.map((item, index) => (
+                <tr key={item.id} className="border-b border-gray-200 last:border-0 hover:bg-[#111111]/50 print:text-xs">
+                  <td className="py-2 print:py-1 text-left">{index + 1}</td>
+                  <td className="py-2 print:py-1 text-left font-medium">{item.description}</td>
+                  <td className="py-2 print:py-1 text-right">{item.quantity}</td>
+                  <td className="py-2 print:py-1 text-right">{formatCurrency(item.unit_price)}</td>
+                  <td className="py-2 print:py-1 text-right">{formatCurrency(item.total)}</td>
                 </tr>
               ))}
             </tbody>
@@ -251,8 +269,13 @@ export default function InvoiceDetailPage() {
           <div className="mt-8 print:mt-4 text-[#111827] border-t border-[#222222] pt-4">
             <h3 className="font-bold uppercase mb-2 tracking-wide text-[10px]">TERMS & CONDITIONS</h3>
             <div className="space-y-1 text-xs text-gray-800">
-              <p>Payment is due within 7 days of invoice date.</p>
-              <p>Please make bank transfers payable to: DriverMade.co</p>
+              <p>Please make bank transfers payable to:</p>
+              <p> SIXTH GEAR AUTO WORKSHOP LLC SPC</p>
+              <p>Bank Name: ABU DHABI COMMERCIAL BANK</p>
+              <p>Account Number: 14387056920001</p>
+              <p>IBAN: AE850030014387056920001</p>
+              <p>SWIFT/BIC: ADCBAEAAXXX</p>
+              <p>Reference: {invoice.invoice_number}</p>
             </div>
           </div>
         </div>
