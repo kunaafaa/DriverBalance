@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { Invoice, InvoiceItem, Customer } from "@/lib/types";
@@ -24,7 +24,6 @@ export default function InvoiceDetailPage() {
   const router = useRouter();
   const [invoice, setInvoice] = useState<(Invoice & { customers: Customer, invoice_items: InvoiceItem[] }) | null>(null);
   const [loading, setLoading] = useState(true);
-  const docRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchInvoice = async () => {
@@ -46,22 +45,6 @@ export default function InvoiceDetailPage() {
 
   const handlePrint = () => {
     window.print();
-  };
-
-  const handleDownloadPDF = async () => {
-    if (!docRef.current || !invoice) return;
-    // @ts-ignore – html2pdf.js has no official TS types
-    const html2pdf = (await import('html2pdf.js')).default;
-    html2pdf()
-      .set({
-        margin: 0,
-        filename: `${invoice.invoice_number}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-      })
-      .from(docRef.current)
-      .save();
   };
 
   const handleMarkAsPaid = async () => {
@@ -114,7 +97,7 @@ export default function InvoiceDetailPage() {
             Print
           </button>
           <button
-            onClick={handleDownloadPDF}
+            onClick={() => window.print()}
             className="px-4 py-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center hover:bg-[#111111]"
           >
             <Download className="w-4 h-4 mr-2 text-[#A855F7]" />
@@ -150,7 +133,7 @@ export default function InvoiceDetailPage() {
 
       {/* Invoice Document */}
       {/* Invoice Document - Classic Corporate Design */}
-      <div ref={docRef} className="bg-white shadow-black/50 print:shadow-none print:shadow-none print:border-none max-w-[800px] mx-auto relative flex flex-col" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
+      <div className="bg-white shadow-black/50 print:shadow-none print:shadow-none print:border-none max-w-[800px] mx-auto relative flex flex-col" style={{ WebkitPrintColorAdjust: 'exact', printColorAdjust: 'exact' }}>
 
         <style>{`
           @media print {
