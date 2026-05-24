@@ -1,5 +1,6 @@
 export type DatabaseStatus = "pending" | "confirmed" | "in_progress" | "completed" | "cancelled";
 export type InvoiceStatus = "draft" | "issued" | "paid" | "overdue" | "cancelled";
+export type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
 export type ItemType = "service" | "part" | "labor";
 export type PaymentMethod = "cash" | "card" | "bank_transfer" | "pending";
 
@@ -116,6 +117,41 @@ export interface Invoice {
 export interface InvoiceItem {
   id: string;
   invoice_id: string;
+  description: string;
+  quantity: number;
+  unit_price: number;
+  total: number;
+  item_type: ItemType;
+  created_at: string;
+}
+
+export interface Quotation {
+  id: string;
+  quotation_number: string;
+  issue_date: string;
+  valid_until?: string;
+  car_make: string;
+  car_model: string;
+  car_year: number;
+  license_plate: string;
+  customer_name?: string;
+  customer_phone?: string;
+  subtotal: number;
+  tax_rate: number;
+  tax_amount: number;
+  discount: number;
+  total: number;
+  status: QuotationStatus;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Joins
+  quotation_items?: QuotationItem[];
+}
+
+export interface QuotationItem {
+  id: string;
+  quotation_id: string;
   description: string;
   quantity: number;
   unit_price: number;

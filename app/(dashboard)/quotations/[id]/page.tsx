@@ -1,0 +1,285 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import axios from "axios";
+import { Quotation, QuotationItem } from "@/lib/types";
+import {
+  ClipboardList,
+  Download,
+  Printer,
+  ChevronLeft,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  Car,
+} from "lucide-react";
+import Link from "next/link";
+import Logo from "@/components/Logo";
+import { formatCurrency, formatDate } from "@/lib/utils/formatting";
+
+const statusColors: Record<string, string> = {
+  draft: "bg-gray-100 text-gray-700",
+  sent: "bg-blue-100 text-blue-700",
+  accepted: "bg-green-100 text-green-700",
+  rejected: "bg-red-100 text-red-700",
+  expired: "bg-yellow-100 text-yellow-700",
+};
+
+export default function QuotationDetailPage() {
+  const { id } = useParams();
+  const router = useRouter();
+  const [quotation, setQuotation] = useState<(Quotation & { quotation_items: QuotationItem[] }) | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id) { setLoading(false); return; }
+    const fetch = async () => {
+      try {
+        const { data } = await axios.get(`/api/quotations/${id}`);
+        setQuotation(data);
+      } catch (error) {
+        console.error("Failed to fetch quotation", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [id]);
+
+  const handleMarkAccepted = async () => {
+    try {
+      await axios.patch(`/api/quotations/${id}`, { status: "accepted" });
+      if (quotation) setQuotation({ ...quotation, status: "accepted" });
+    } catch { alert("Failed to update status"); }
+  };
+
+  const handleMarkRejected = async () => {
+    try {
+      await axios.patch(`/api/quotations/${id}`, { status: "rejected" });
+      if (quotation) setQuotation({ ...quotation, status: "rejected" });
+    } catch { alert("Failed to update status"); }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm("Delete this quotation permanently?")) return;
+    try {
+      await axios.delete(`/api/quotations/${id}`);
+      router.push("/quotations");
+    } catch (error: any) {
+      alert(`Failed to delete: ${error.response?.data?.error || error.message}`);
+    }
+  };
+
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center h-[60vh]">
+      <div className="w-12 h-12 border-4 border-[#A855F7] border-t-transparent rounded-full animate-spin"></div>
+      <p className="mt-4 text-gray-500 font-bold">Loading quotation...</p>
+    </div>
+  );
+
+  if (!quotation) return <div className="text-white">Quotation not found</div>;
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+      {/* Action Bar */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+        <Link
+          href="/quotations"
+          className="inline-flex items-center text-gray-400 hover:text-white font-bold text-sm transition-all"
+        >
+          <ChevronLeft className="w-4 h-4 mr-1" />
+          Back to list
+        </Link>
+        <div className="flex flex-wrap gap-3">
+          <button
+            onClick={() => window.print()}
+            className="px-4 py-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-sm flex items-center hover:bg-[#111111] transition-all"
+          >
+            <Printer className="w-4 h-4 mr-2 text-[#A855F7]" />
+            Print
+          </button>
+          <button
+            onClick={() => window.print()}
+            className="px-4 py-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-sm flex items-center hover:bg-[#111111] transition-all"
+          >
+            <Download className="w-4 h-4 mr-2 text-[#A855F7]" />
+            PDF
+          </button>
+          <button
+            onClick={handleDelete}
+            className="px-4 py-2 bg-[#0D0D0D] border border-red-100 rounded-xl text-red-600 font-bold text-sm flex items-center hover:bg-red-50 transition-all"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Delete
+          </button>
+          {quotation.status === "draft" || quotation.status === "sent" ? (
+            <>
+              <button
+                onClick={handleMarkAccepted}
+                className="px-6 py-2 bg-green-600 text-white font-black text-sm rounded-xl hover:bg-green-700 transition-all flex items-center"
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Mark Accepted
+              </button>
+              <button
+                onClick={handleMarkRejected}
+                className="px-6 py-2 bg-red-600 text-white font-black text-sm rounded-xl hover:bg-red-700 transition-all flex items-center"
+              >
+                <XCircle className="w-4 h-4 mr-2" />
+                Mark Rejected
+              </button>
+            </>
+          ) : null}
+        </div>
+      </div>
+
+      {/* Quotation Document */}
+      <div
+        className="bg-white shadow-black/50 print:shadow-none print:border-none max-w-[800px] mx-auto relative flex flex-col"
+        style={{ WebkitPrintColorAdjust: "exact", printColorAdjust: "exact" }}
+      >
+        <style>{`
+          @media print {
+            @page { size: A4; margin: 10mm; }
+            body { -webkit-print-color-adjust: exact; }
+          }
+        `}</style>
+
+        {/* Top bar */}
+        <div className="h-4 bg-[#111827] w-full shrink-0 border-t-[16px] border-[#A855F7]"></div>
+
+        <div className="flex-1 p-10 md:p-16 print:p-8 flex flex-col">
+          {/* Logo + Address */}
+          <div className="mb-8 print:mb-6 text-sm text-[#111827]">
+            <Logo variant="dark" className="mb-2" />
+            <div className="space-y-1">
+              <p>Industrial Area 1</p>
+              <p>Abu Dhabi, UAE</p>
+              <p className="mt-1 text-xs text-gray-500">TRN: 100234567800003</p>
+            </div>
+          </div>
+
+          {/* Two-column info */}
+          <div className="flex justify-between mb-8 print:mb-6 text-sm text-[#111827]">
+            <div className="w-1/2 pr-4">
+              <h3 className="font-bold uppercase mb-2 text-xs">VEHICLE</h3>
+              <div className="space-y-1 text-xs">
+                <p className="font-semibold text-sm">{quotation.car_year} {quotation.car_make} {quotation.car_model}</p>
+                <p>Plate: {quotation.license_plate}</p>
+                {quotation.customer_name && <p className="mt-2 font-semibold">{quotation.customer_name}</p>}
+                {quotation.customer_phone && <p>{quotation.customer_phone}</p>}
+              </div>
+            </div>
+
+            <div className="w-1/2 flex justify-end">
+              <table className="text-sm">
+                <tbody>
+                  <tr>
+                    <td className="font-bold uppercase pb-1 pr-6 whitespace-nowrap text-xs text-right">QUOTATION #</td>
+                    <td className="pb-1 text-right whitespace-nowrap">{quotation.quotation_number}</td>
+                  </tr>
+                  <tr>
+                    <td className="font-bold uppercase pb-1 pr-6 whitespace-nowrap text-xs text-right">DATE ISSUED</td>
+                    <td className="pb-1 text-right whitespace-nowrap">{formatDate(quotation.issue_date)}</td>
+                  </tr>
+                  {quotation.valid_until && (
+                    <tr>
+                      <td className="font-bold uppercase pb-1 pr-6 whitespace-nowrap text-xs text-right">VALID UNTIL</td>
+                      <td className="pb-1 text-right whitespace-nowrap">{formatDate(quotation.valid_until)}</td>
+                    </tr>
+                  )}
+                  <tr>
+                    <td className="font-bold uppercase pb-1 pr-6 whitespace-nowrap text-xs text-right">STATUS</td>
+                    <td className="pb-1 text-right">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase ${statusColors[quotation.status]}`}>
+                        {quotation.status}
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Total highlight bar */}
+          <div className="border-t-2 border-b-2 border-[#A855F7] py-3 mb-8 print:mb-6 flex justify-between items-center">
+            <h2 className="text-3xl font-bold text-[#111827] tracking-tight">Quotation Total</h2>
+            <span className="text-3xl font-bold text-[#111827]">{formatCurrency(quotation.total)}</span>
+          </div>
+
+          {/* Items table */}
+          <table className="w-full text-[#111827] text-sm mb-6 print:mb-4">
+            <thead>
+              <tr className="border-b-2 border-[#A855F7] text-xs">
+                <th className="py-2 text-left font-bold uppercase w-12">QTY</th>
+                <th className="py-2 text-left font-bold uppercase">DESCRIPTION</th>
+                <th className="py-2 text-right font-bold uppercase w-28">UNIT PRICE</th>
+                <th className="py-2 text-right font-bold uppercase w-28">AMOUNT</th>
+              </tr>
+            </thead>
+            <tbody>
+              {quotation.quotation_items?.map((item) => (
+                <tr key={item.id} className="border-b border-gray-200 last:border-0">
+                  <td className="py-2 text-left">{item.quantity}</td>
+                  <td className="py-2 text-left font-medium">{item.description}</td>
+                  <td className="py-2 text-right">{formatCurrency(item.unit_price)}</td>
+                  <td className="py-2 text-right">{formatCurrency(item.total)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Totals */}
+          <div className="flex justify-end text-sm text-[#111827]">
+            <div className="w-64">
+              <table className="w-full">
+                <tbody>
+                  <tr>
+                    <td className="py-1 text-right pr-6">Subtotal</td>
+                    <td className="py-1 text-right">{formatCurrency(quotation.subtotal)}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-1 text-right pr-6">VAT {quotation.tax_rate}%</td>
+                    <td className="py-1 text-right">{formatCurrency(quotation.tax_amount)}</td>
+                  </tr>
+                  {quotation.discount > 0 && (
+                    <tr>
+                      <td className="py-1 text-right pr-6 text-red-600">Discount</td>
+                      <td className="py-1 text-right text-red-600">-{formatCurrency(quotation.discount)}</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              <div className="mt-8 text-right flex flex-col items-end pt-8">
+                <div className="h-[2px] w-40 bg-[#A855F7]"></div>
+                <p className="mt-1 text-[10px] font-bold uppercase text-[#111827]">Authorized Signature</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Notes */}
+          {quotation.notes && (
+            <div className="mt-8 print:mt-4 text-[#111827] border-t border-[#222222] pt-4">
+              <h3 className="font-bold uppercase mb-2 tracking-wide text-[10px]">NOTES</h3>
+              <p className="text-xs text-gray-800 whitespace-pre-wrap">{quotation.notes}</p>
+            </div>
+          )}
+
+          {/* Terms */}
+          <div className="mt-6 print:mt-4 text-[#111827] border-t border-[#222222] pt-4">
+            <h3 className="font-bold uppercase mb-2 tracking-wide text-[10px]">TERMS & CONDITIONS</h3>
+            <div className="space-y-1 text-xs text-gray-800">
+              <p>This quotation is valid for 30 days from the date of issue.</p>
+              <p>Prices are subject to change after the validity period.</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div className="h-4 bg-[#000000] w-full shrink-0 border-b-[16px] border-[#000000] print:mt-auto"></div>
+      </div>
+    </div>
+  );
+}

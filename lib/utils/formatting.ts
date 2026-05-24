@@ -36,3 +36,9 @@ export function generateInvoiceNumber(index: number): string {
   const year = new Date().getFullYear();
   return `INV-${year}-${String(index).padStart(3, "0")}`;
 }
+
+// Generate quotation number (QUO-2025-001)
+export function generateQuotationNumber(index: number): string {
+  const year = new Date().getFullYear();
+  return `QUO-${year}-${String(index).padStart(3, "0")}`;
+}

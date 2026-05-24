@@ -9,6 +9,7 @@ import {
   Calendar,
   FileText,
   Package,
+  ClipboardList,
   Settings,
   LogOut
 } from "lucide-react";
@@ -21,6 +22,7 @@ const menuItems = [
   { name: "Vehicles", icon: Car, href: "/vehicles" },
   { name: "Appointments", icon: Calendar, href: "/appointments" },
   { name: "Invoices", icon: FileText, href: "/invoices" },
+  { name: "Quotations", icon: ClipboardList, href: "/quotations" },
   { name: "Inventory", icon: Package, href: "/inventory" },
 ];
 

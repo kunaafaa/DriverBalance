@@ -47,6 +47,27 @@ export const inventorySchema = z.object({
   supplier_contact: z.string().optional().nullable().or(z.literal("")),
 });
 
+export const quotationSchema = z.object({
+  quotation_number: z.string(),
+  issue_date: z.string(),
+  valid_until: z.string().optional().nullable(),
+  car_make: z.string().min(1, "Car make required"),
+  car_model: z.string().min(1, "Car model required"),
+  car_year: z.coerce.number().min(1900).max(2100),
+  license_plate: z.string().min(2, "License plate required"),
+  customer_name: z.string().optional().nullable().or(z.literal("")),
+  customer_phone: z.string().optional().nullable().or(z.literal("")),
+  items: z.array(z.object({
+    description: z.string().min(1, "Description required"),
+    quantity: z.coerce.number().min(1),
+    unit_price: z.coerce.number().min(0),
+    item_type: z.enum(["service", "part", "labor"]),
+  })).min(1, "At least one item required"),
+  tax_rate: z.coerce.number().default(5),
+  discount: z.coerce.number().min(0).default(0),
+  notes: z.string().optional().nullable().or(z.literal("")),
+});
+
 export const invoiceSchema = z.object({
   appointment_id: z.string().uuid().optional().nullable(),
   customer_id: z.string().uuid("Invalid customer"),

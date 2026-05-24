@@ -130,6 +130,41 @@ create table if not exists service_history (
   created_at timestamp with time zone default now()
 );
 
+-- 9. Quotations Table
+create table if not exists quotations (
+  id uuid primary key default uuid_generate_v4(),
+  quotation_number text unique not null,
+  issue_date timestamp with time zone default now(),
+  valid_until timestamp with time zone,
+  car_make text not null,
+  car_model text not null,
+  car_year integer not null,
+  license_plate text not null,
+  customer_name text,
+  customer_phone text,
+  subtotal decimal(10, 2) not null default 0,
+  tax_rate decimal(5, 2) default 5.00,
+  tax_amount decimal(10, 2) not null default 0,
+  discount decimal(10, 2) default 0,
+  total decimal(10, 2) not null default 0,
+  status text check (status in ('draft', 'sent', 'accepted', 'rejected', 'expired')) default 'draft',
+  notes text,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
+-- 10. Quotation Items Table
+create table if not exists quotation_items (
+  id uuid primary key default uuid_generate_v4(),
+  quotation_id uuid references quotations(id) on delete cascade,
+  description text not null,
+  quantity integer not null default 1,
+  unit_price decimal(10, 2) not null,
+  total decimal(10, 2) not null,
+  item_type text check (item_type in ('service', 'part', 'labor')) not null,
+  created_at timestamp with time zone default now()
+);
+
 -- RLS (Row Level Security) - Simplified for now
 -- In a real app, you would add policies for 'authenticated' users
 
@@ -141,6 +176,8 @@ alter table parts_inventory enable row level security;
 alter table invoices enable row level security;
 alter table invoice_items enable row level security;
 alter table service_history enable row level security;
+alter table quotations enable row level security;
+alter table quotation_items enable row level security;
 
 -- Policies (Allow all for research purposes, should be restricted in prod)
 create policy "Enable all for authenticated users" on customers for all to authenticated using (true);
@@ -151,3 +188,5 @@ create policy "Enable all for authenticated users" on parts_inventory for all to
 create policy "Enable all for authenticated users" on invoices for all to authenticated using (true);
 create policy "Enable all for authenticated users" on invoice_items for all to authenticated using (true);
 create policy "Enable all for authenticated users" on service_history for all to authenticated using (true);
+create policy "Enable all for authenticated users" on quotations for all to authenticated using (true);
+create policy "Enable all for authenticated users" on quotation_items for all to authenticated using (true);
