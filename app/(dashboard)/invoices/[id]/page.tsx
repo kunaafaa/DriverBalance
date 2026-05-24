@@ -176,6 +176,7 @@ export default function InvoiceDetailPage() {
           {/* Two Column Info Section */}
           <div className="flex justify-between mb-8 print:mb-3 text-sm text-[#111827]">
             <div className="w-1/2 pr-4">
+              <p className="text-xs font-bold text-[#111827] mb-4">TRN: 100234567800003</p>
               <h3 className="font-bold uppercase mb-2 text-xs">BILL TO</h3>
               <div className="space-y-1 text-xs">
                 <p className="font-semibold text-sm">{invoice.customers?.name}</p>
@@ -245,7 +246,7 @@ export default function InvoiceDetailPage() {
                     <td className="py-1 text-right">{formatCurrency(invoice.subtotal)}</td>
                   </tr>
                   <tr>
-                    <td className="py-1 text-right pr-6">Sales Tax 5%</td>
+                    <td className="py-1 text-right pr-6">VAT 5%</td>
                     <td className="py-1 text-right">{formatCurrency(invoice.tax_amount)}</td>
                   </tr>
                   {invoice.discount > 0 && (

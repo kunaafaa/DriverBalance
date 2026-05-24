@@ -187,6 +187,7 @@ export default function QuotationDetailPage() {
           {/* Two-column info */}
           <div className="flex justify-between mb-8 print:mb-6 text-sm text-[#111827]">
             <div className="w-1/2 pr-4">
+              <p className="text-xs font-bold text-[#111827] mb-4">TRN: 100234567800003</p>
               <h3 className="font-bold uppercase mb-2 text-xs">VEHICLE</h3>
               <div className="space-y-1 text-xs">
                 <p className="font-semibold text-sm">{quotation.car_year} {quotation.car_make} {quotation.car_model}</p>
