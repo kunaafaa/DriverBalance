@@ -7,6 +7,55 @@ import { Plus, Search, Filter } from "lucide-react";
 import Link from "next/link";
 import axios from "axios";
 
+function CustomersTableSkeleton() {
+  return (
+    <div className="bg-[#0D0D0D] rounded-2xl shadow-sm border border-[#1A1A1A] overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left border-collapse">
+          <thead>
+            <tr className="bg-[#111111] border-b border-[#1A1A1A]">
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Customer</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Contact</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">City</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Joined</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#1A1A1A]">
+            {[...Array(8)].map((_, i) => (
+              <tr key={i}>
+                <td className="px-6 py-4">
+                  <div className="h-4 w-32 bg-[#1A1A1A] rounded animate-pulse mb-2" />
+                  <div className="h-3 w-20 bg-[#1A1A1A] rounded animate-pulse" />
+                </td>
+                <td className="px-6 py-4">
+                  <div className="h-3 w-28 bg-[#1A1A1A] rounded animate-pulse mb-2" />
+                  <div className="h-3 w-36 bg-[#1A1A1A] rounded animate-pulse" />
+                </td>
+                <td className="px-6 py-4">
+                  <div className="h-6 w-20 bg-[#1A1A1A] rounded-full animate-pulse" />
+                </td>
+                <td className="px-6 py-4">
+                  <div className="h-4 w-20 bg-[#1A1A1A] rounded animate-pulse" />
+                </td>
+                <td className="px-6 py-4">
+                  <div className="flex items-center justify-end gap-2">
+                    <div className="w-8 h-8 bg-[#1A1A1A] rounded-lg animate-pulse" />
+                    <div className="w-8 h-8 bg-[#1A1A1A] rounded-lg animate-pulse" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="px-6 py-4 bg-[#111111] border-t border-[#1A1A1A]">
+        <div className="h-4 w-40 bg-[#1A1A1A] rounded animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -83,10 +132,7 @@ export default function CustomersPage() {
       </div>
 
       {loading ? (
-        <div className="bg-[#0D0D0D] rounded-2xl p-20 flex flex-col items-center justify-center border border-[#1A1A1A] shadow-sm">
-          <div className="w-12 h-12 border-4 border-[#A855F7] border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-500 font-bold">Loading records...</p>
-        </div>
+        <CustomersTableSkeleton />
       ) : (
         <CustomersTable
           customers={customers}

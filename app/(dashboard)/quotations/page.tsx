@@ -16,6 +16,46 @@ const statusColors: Record<string, string> = {
   expired: "bg-yellow-100 text-yellow-600",
 };
 
+function QuotationsTableSkeleton() {
+  return (
+    <div className="bg-[#0D0D0D] rounded-3xl border border-[#1A1A1A] shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-[#111111] border-b border-[#1A1A1A]">
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Quotation #</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Vehicle</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Plate</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Total</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#1A1A1A]">
+            {[...Array(6)].map((_, i) => (
+              <tr key={i}>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-[#1A1A1A] rounded animate-pulse" />
+                    <div className="h-4 w-28 bg-[#1A1A1A] rounded animate-pulse" />
+                  </div>
+                </td>
+                <td className="px-6 py-4"><div className="h-4 w-36 bg-[#1A1A1A] rounded animate-pulse" /></td>
+                <td className="px-6 py-4"><div className="h-4 w-20 bg-[#1A1A1A] rounded animate-pulse" /></td>
+                <td className="px-6 py-4"><div className="h-4 w-20 bg-[#1A1A1A] rounded animate-pulse" /></td>
+                <td className="px-6 py-4"><div className="h-4 w-16 bg-[#1A1A1A] rounded animate-pulse" /></td>
+                <td className="px-6 py-4 text-right">
+                  <div className="h-6 w-16 bg-[#1A1A1A] rounded-full animate-pulse inline-block" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function QuotationsPage() {
   const router = useRouter();
   const [quotations, setQuotations] = useState<Quotation[]>([]);
@@ -23,17 +63,17 @@ export default function QuotationsPage() {
 
   useEffect(() => {
     let isMounted = true;
-    const fetch = async () => {
+    const fetchData = async () => {
       try {
         const { data } = await axios.get("/api/quotations");
         if (isMounted) setQuotations(data);
       } catch (error) {
-        console.error("Failed to fetch quotations", error);
+        if (isMounted) console.error("Failed to fetch quotations", error);
       } finally {
         if (isMounted) setLoading(false);
       }
     };
-    fetch();
+    fetchData();
     return () => { isMounted = false; };
   }, []);
 
@@ -54,10 +94,7 @@ export default function QuotationsPage() {
       </div>
 
       {loading ? (
-        <div className="bg-[#0D0D0D] rounded-3xl p-20 flex flex-col items-center justify-center border border-[#1A1A1A]">
-          <div className="w-12 h-12 border-4 border-[#A855F7] border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-500 font-bold">Loading quotations...</p>
-        </div>
+        <QuotationsTableSkeleton />
       ) : (
         <div className="bg-[#0D0D0D] rounded-3xl border border-[#1A1A1A] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">

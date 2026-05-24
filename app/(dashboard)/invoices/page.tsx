@@ -1,34 +1,69 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Invoice } from "@/lib/types";
-import { Plus, Search, FileText, Download } from "lucide-react";
+import { Plus, FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { formatCurrency, formatDate } from "@/lib/utils/formatting";
 
+function InvoicesTableSkeleton() {
+  return (
+    <div className="bg-[#0D0D0D] rounded-3xl border border-[#1A1A1A] shadow-sm overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-[#111111] border-b border-[#1A1A1A]">
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Invoice #</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Customer</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Date</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider">Amount</th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-400 uppercase tracking-wider text-right">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-[#1A1A1A]">
+            {[...Array(6)].map((_, i) => (
+              <tr key={i}>
+                <td className="px-6 py-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 bg-[#1A1A1A] rounded animate-pulse" />
+                    <div className="h-4 w-28 bg-[#1A1A1A] rounded animate-pulse" />
+                  </div>
+                </td>
+                <td className="px-6 py-4"><div className="h-4 w-32 bg-[#1A1A1A] rounded animate-pulse" /></td>
+                <td className="px-6 py-4"><div className="h-4 w-20 bg-[#1A1A1A] rounded animate-pulse" /></td>
+                <td className="px-6 py-4"><div className="h-4 w-16 bg-[#1A1A1A] rounded animate-pulse" /></td>
+                <td className="px-6 py-4 text-right">
+                  <div className="h-6 w-14 bg-[#1A1A1A] rounded-full animate-pulse inline-block" />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export default function InvoicesPage() {
   const router = useRouter();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-
-  const fetchInvoices = async (isMounted = true) => {
-    setLoading(true);
-    try {
-      const { data } = await axios.get("/api/invoices");
-      if (isMounted) setInvoices(data);
-    } catch (error) {
-      console.error("Failed to fetch invoices", error);
-    } finally {
-      if (isMounted) setLoading(false);
-    }
-  };
 
   useEffect(() => {
     let isMounted = true;
-    fetchInvoices(isMounted);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const { data } = await axios.get("/api/invoices");
+        if (isMounted) setInvoices(data);
+      } catch (error) {
+        if (isMounted) console.error("Failed to fetch invoices", error);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
+    fetchData();
     return () => { isMounted = false; };
   }, []);
 
@@ -49,10 +84,7 @@ export default function InvoicesPage() {
       </div>
 
       {loading ? (
-        <div className="bg-[#0D0D0D] rounded-3xl p-20 flex flex-col items-center justify-center border border-[#1A1A1A] shadow-sm">
-          <div className="w-12 h-12 border-4 border-[#A855F7] border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-gray-500 font-bold">Loading financials...</p>
-        </div>
+        <InvoicesTableSkeleton />
       ) : (
         <div className="bg-[#0D0D0D] rounded-3xl border border-[#1A1A1A] shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
@@ -68,9 +100,9 @@ export default function InvoicesPage() {
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {invoices.map((invoice) => (
-                  <tr 
-                    key={invoice.id} 
-                    className="hover:bg-[#9333EA]/10 transition-all cursor-pointer" 
+                  <tr
+                    key={invoice.id}
+                    className="hover:bg-[#9333EA]/10 transition-all cursor-pointer"
                     onClick={() => router.push(`/invoices/${invoice.id}`)}
                   >
                     <td className="px-6 py-4">
@@ -90,7 +122,7 @@ export default function InvoicesPage() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest ${
-                        invoice.status === "paid" ? "bg-green-100 text-green-600" : 
+                        invoice.status === "paid" ? "bg-green-100 text-green-600" :
                         invoice.status === "issued" ? "bg-purple-100 text-purple-600" : "bg-yellow-100 text-yellow-600"
                       }`}>
                         {invoice.status}
@@ -101,7 +133,7 @@ export default function InvoicesPage() {
               </tbody>
             </table>
           </div>
-          
+
           {invoices.length === 0 && (
             <div className="py-20 text-center">
               <FileText className="w-12 h-12 text-gray-200 mx-auto mb-4" />
