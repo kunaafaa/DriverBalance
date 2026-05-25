@@ -4,14 +4,12 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
 import { Customer, Vehicle, Appointment, Invoice } from "@/lib/types";
-import { 
-  User, 
-  Phone, 
-  Mail, 
-  MapPin, 
-  Car, 
-  Calendar, 
-  FileText, 
+import {
+  User,
+  Phone,
+  MapPin,
+  Car,
+  FileText,
   Plus,
   Edit,
   Clock,
@@ -129,16 +127,6 @@ export default function CustomerProfilePage() {
                 <div>
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Phone</p>
                   <p className="text-sm font-bold text-white mt-1">{customer.phone}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-[#111111] rounded-xl text-white">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Email</p>
-                  <p className="text-sm font-bold text-white mt-1">{customer.email}</p>
                 </div>
               </div>
 

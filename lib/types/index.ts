@@ -7,7 +7,6 @@ export type PaymentMethod = "cash" | "card" | "bank_transfer" | "pending";
 export interface Customer {
   id: string;
   name: string;
-  email: string;
   phone: string;
   address?: string;
   city: string;

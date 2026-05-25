@@ -3,7 +3,7 @@
 import { Customer } from "@/lib/types";
 import { formatDate } from "@/lib/utils/formatting";
 import Link from "next/link";
-import { Eye, Edit2, Trash2, Phone, Mail } from "lucide-react";
+import { Eye, Edit2, Trash2, Phone } from "lucide-react";
 
 interface CustomersTableProps {
   customers: Customer[];
@@ -47,10 +47,6 @@ export default function CustomersTable({
                     <div className="flex items-center text-sm text-gray-300">
                       <Phone className="w-3 h-3 mr-2 text-[#A855F7]" />
                       {customer.phone}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-300">
-                      <Mail className="w-3 h-3 mr-2 text-[#A855F7]" />
-                      {customer.email}
                     </div>
                   </div>
                 </td>

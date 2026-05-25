@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, checkRateLimit, sanitizeBody, log, secureJson } from "@/lib/utils/api-security";
 
 const ALLOWED_CUSTOMER_FIELDS = [
-  "name", "email", "phone", "address", "city", "postal_code", "notes",
+  "name", "phone", "address", "city", "postal_code", "notes",
 ];
 
 export async function GET(request: NextRequest) {
@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   let query = supabase.from("customers").select("*", { count: "exact" });
 
   if (search) {
-    query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+    query = query.or(`name.ilike.%${search}%,phone.ilike.%${search}%`);
   }
 
   const { data, error, count } = await query

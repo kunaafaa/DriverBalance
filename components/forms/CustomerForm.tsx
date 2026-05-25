@@ -40,17 +40,6 @@ export default function CustomerForm({ initialData, onSubmit, onCancel }: Custom
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700">Email (Optional)</label>
-          <input
-            {...register("email")}
-            type="email"
-            className="w-full px-4 py-3 rounded-xl border border-[#222222] focus:ring-2 focus:ring-[#A855F7] focus:border-[#1A1A1A] transition-all outline-none"
-            placeholder="e.g. ahmad@example.com"
-          />
-          {errors.email && <p className="text-red-500 text-xs font-medium">{errors.email.message}</p>}
-        </div>
-
-        <div className="space-y-2">
           <label className="text-sm font-semibold text-gray-700">Phone Number</label>
           <input
             {...register("phone")}

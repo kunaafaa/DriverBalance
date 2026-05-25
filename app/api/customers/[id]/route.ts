@@ -3,7 +3,7 @@ import { NextRequest } from "next/server";
 import { requireAuth, checkRateLimit, sanitizeBody, log, secureJson } from "@/lib/utils/api-security";
 
 const ALLOWED_CUSTOMER_FIELDS = [
-  "name", "email", "phone", "address", "city", "postal_code", "notes",
+  "name", "phone", "address", "city", "postal_code", "notes",
 ];
 
 export async function GET(

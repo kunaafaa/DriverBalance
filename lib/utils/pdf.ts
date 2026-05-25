@@ -43,7 +43,6 @@ export const generateInvoicePDF = (
   doc.text(invoice.customers?.name || "N/A", margin, 76);
   doc.setFont("helvetica", "normal");
   doc.text(invoice.customers?.phone || "", margin, 81);
-  doc.text(invoice.customers?.email || "", margin, 86);
 
   // Vehicle Info
   doc.setFontSize(12);
