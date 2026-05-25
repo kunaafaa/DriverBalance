@@ -4,10 +4,10 @@ import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { invoiceSchema } from "@/lib/utils/validation";
 import { z } from "zod";
-import { Invoice, Customer, ItemType } from "@/lib/types";
+import { Invoice, Customer, ItemType, Vehicle } from "@/lib/types";
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Plus, Trash2, Calculator, Calendar, User, FileText } from "lucide-react";
+import { Plus, Trash2, Calculator, Calendar, User, FileText, Car } from "lucide-react";
 
 type InvoiceFormData = z.infer<typeof invoiceSchema>;
 
@@ -20,6 +20,17 @@ interface InvoiceFormProps {
 export default function InvoiceForm({ initialData, onSubmit, onCancel }: InvoiceFormProps) {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loadingCustomers, setLoadingCustomers] = useState(true);
+  const [vehicleInfo, setVehicleInfo] = useState<Partial<Vehicle> | null>(
+    initialData?.car_make
+      ? {
+          make: initialData.car_make,
+          model: initialData.car_model ?? "",
+          year: initialData.car_year ?? new Date().getFullYear(),
+          license_plate: initialData.license_plate ?? "",
+        }
+      : null
+  );
+  const [loadingVehicle, setLoadingVehicle] = useState(false);
 
   const {
     register,
@@ -33,6 +44,10 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
       invoice_number: `INV-${Date.now().toString().slice(-6)}`,
       issue_date: new Date().toISOString().split("T")[0],
       due_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+      car_make: "",
+      car_model: "",
+      car_year: undefined,
+      license_plate: "",
       items: [{ description: "", quantity: 1, unit_price: 0, item_type: "service" as ItemType }],
       tax_rate: 5,
       discount: 0,
@@ -45,30 +60,12 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
     name: "items",
   });
 
-  const watchedItems = useWatch({
-    control,
-    name: "items",
-  });
+  const watchedItems = useWatch({ control, name: "items" });
+  const watchedTaxRate = useWatch({ control, name: "tax_rate" });
+  const watchedDiscount = useWatch({ control, name: "discount" });
+  const watchedPaymentMethod = useWatch({ control, name: "payment_method" });
 
-  const watchedTaxRate = useWatch({
-    control,
-    name: "tax_rate",
-  });
-
-  const watchedDiscount = useWatch({
-    control,
-    name: "discount",
-  });
-
-  const watchedPaymentMethod = useWatch({
-    control,
-    name: "payment_method",
-  });
-
-  const subtotal = watchedItems.reduce((acc, item) => {
-    return acc + (item.quantity * item.unit_price || 0);
-  }, 0);
-
+  const subtotal = watchedItems.reduce((acc, item) => acc + (item.quantity * item.unit_price || 0), 0);
   const taxAmount = (subtotal * (watchedTaxRate || 0)) / 100;
   const total = subtotal + taxAmount - (watchedDiscount || 0);
 
@@ -86,6 +83,43 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
     fetchCustomers();
   }, []);
 
+  const fetchVehicleForCustomer = async (customerId: string) => {
+    if (!customerId) {
+      setVehicleInfo(null);
+      setValue("car_make", "");
+      setValue("car_model", "");
+      setValue("car_year", undefined as any);
+      setValue("license_plate", "");
+      return;
+    }
+    setLoadingVehicle(true);
+    try {
+      const { data } = await axios.get(`/api/vehicles?customer_id=${customerId}`);
+      const vehicles = data as Vehicle[];
+      if (vehicles.length > 0) {
+        const v = vehicles[0];
+        setVehicleInfo(v);
+        setValue("car_make", v.make);
+        setValue("car_model", v.model);
+        setValue("car_year", v.year);
+        setValue("license_plate", v.license_plate);
+      } else {
+        setVehicleInfo(null);
+        setValue("car_make", "");
+        setValue("car_model", "");
+        setValue("car_year", undefined as any);
+        setValue("license_plate", "");
+      }
+    } catch (error) {
+      console.error("Failed to fetch vehicle", error);
+      setVehicleInfo(null);
+    } finally {
+      setLoadingVehicle(false);
+    }
+  };
+
+  const customerSelectReg = register("customer_id");
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
       {/* Header Info */}
@@ -98,7 +132,7 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
           <input
             {...register("invoice_number")}
             readOnly={!!initialData}
-            className={`w-full px-4 py-2 rounded-xl border border-[#1A1A1A] font-bold outline-none focus:ring-2 focus:ring-[#A855F7] ${initialData ? 'bg-[#1A1A1A] text-gray-500 cursor-not-allowed' : 'bg-[#0D0D0D] text-white'}`}
+            className={`w-full px-4 py-2 rounded-xl border border-[#1A1A1A] font-bold outline-none focus:ring-2 focus:ring-[#A855F7] ${initialData ? "bg-[#1A1A1A] text-gray-500 cursor-not-allowed" : "bg-[#0D0D0D] text-white"}`}
           />
           {errors.invoice_number && <p className="text-red-500 text-[10px] font-bold">{errors.invoice_number.message}</p>}
         </div>
@@ -121,21 +155,70 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
             Customer
           </label>
           <select
-            {...register("customer_id")}
+            {...customerSelectReg}
+            onChange={(e) => {
+              customerSelectReg.onChange(e);
+              fetchVehicleForCustomer(e.target.value);
+            }}
             disabled={loadingCustomers}
             className="w-full bg-[#0D0D0D] px-4 py-2 rounded-xl border border-[#1A1A1A] font-bold text-white outline-none focus:ring-2 focus:ring-[#A855F7]"
           >
             <option value="">Select a customer...</option>
             {initialData?.customer_id && initialData?.customers && (
-              <option value={initialData.customer_id}>{initialData.customers.name} ({initialData.customers.phone})</option>
+              <option value={initialData.customer_id}>
+                {initialData.customers.name} ({initialData.customers.phone})
+              </option>
             )}
             {customers.map((c) => {
               if (c.id === initialData?.customer_id) return null;
-              return <option key={c.id} value={c.id}>{c.name} ({c.phone})</option>
+              return (
+                <option key={c.id} value={c.id}>
+                  {c.name} ({c.phone})
+                </option>
+              );
             })}
           </select>
           {errors.customer_id && <p className="text-red-500 text-[10px] font-bold mt-1">{errors.customer_id.message}</p>}
         </div>
+      </div>
+
+      {/* Vehicle Info — read-only, auto-populated from customer */}
+      <div className="p-6 bg-[#111111] rounded-3xl border border-[#1A1A1A]">
+        <h3 className="flex items-center text-sm font-black text-white uppercase tracking-tight mb-4">
+          <Car className="w-4 h-4 mr-2 text-[#A855F7]" />
+          Vehicle Details
+          <span className="ml-2 text-[10px] text-gray-500 normal-case font-normal tracking-normal">(auto-filled from customer)</span>
+        </h3>
+
+        {loadingVehicle ? (
+          <p className="text-xs text-gray-500 font-bold animate-pulse">Fetching vehicle info...</p>
+        ) : vehicleInfo ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              { label: "Make", value: vehicleInfo.make },
+              { label: "Model", value: vehicleInfo.model },
+              { label: "Year", value: vehicleInfo.year?.toString() },
+              { label: "License Plate", value: vehicleInfo.license_plate },
+            ].map(({ label, value }) => (
+              <div key={label} className="space-y-1">
+                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{label}</p>
+                <p className="px-4 py-2 bg-[#0D0D0D] rounded-xl border border-[#1A1A1A] text-white font-bold text-sm">
+                  {value || "—"}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-xs text-gray-600 font-bold">
+            No vehicle found for this customer. Select a customer to auto-fill vehicle details.
+          </p>
+        )}
+
+        {/* Hidden fields so react-hook-form includes vehicle data in submission */}
+        <input type="hidden" {...register("car_make")} />
+        <input type="hidden" {...register("car_model")} />
+        <input type="hidden" {...register("car_year")} />
+        <input type="hidden" {...register("license_plate")} />
       </div>
 
       {/* Items List */}
@@ -164,7 +247,9 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
                   placeholder="Item description (Service or Part)"
                   className="w-full px-4 py-2 bg-[#111111] border-none rounded-xl text-sm font-medium outline-none focus:bg-[#0D0D0D] focus:ring-2 focus:ring-[#A855F7]"
                 />
-                {errors.items?.[index]?.description && <p className="text-red-500 text-[10px] font-bold">{errors.items[index]?.description?.message}</p>}
+                {errors.items?.[index]?.description && (
+                  <p className="text-red-500 text-[10px] font-bold">{errors.items[index]?.description?.message}</p>
+                )}
               </div>
 
               <div className="col-span-4 md:col-span-2 space-y-1">
@@ -231,11 +316,14 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
               {["cash", "card", "bank_transfer", "pending"].map((method) => (
                 <label
                   key={method}
-                  className={`flex items-center justify-center px-4 py-3 rounded-xl border cursor-pointer transition-all font-bold text-xs uppercase tracking-widest ${watchedPaymentMethod === method ? "bg-[#A855F7] border-[#A855F7] text-white shadow-lg" : "bg-[#0D0D0D] border-[#1A1A1A] text-gray-400 hover:border-[#A855F7]"
-                    }`}
+                  className={`flex items-center justify-center px-4 py-3 rounded-xl border cursor-pointer transition-all font-bold text-xs uppercase tracking-widest ${
+                    watchedPaymentMethod === method
+                      ? "bg-[#A855F7] border-[#A855F7] text-white shadow-lg"
+                      : "bg-[#0D0D0D] border-[#1A1A1A] text-gray-400 hover:border-[#A855F7]"
+                  }`}
                 >
                   <input {...register("payment_method")} type="radio" value={method} className="hidden" />
-                  {method.replace('_', ' ')}
+                  {method.replace("_", " ")}
                 </label>
               ))}
             </div>
@@ -300,13 +388,13 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
             )}
             {Object.keys(errors).length > 0 && (
               <div className="text-red-400 text-xs font-bold bg-red-900/20 p-3 rounded-xl border border-red-900/50">
-                Plese fix the validation errors before submitting. Check missing fields like Customer or Items.
+                Please fix the validation errors before submitting. Check missing fields like Customer or Items.
               </div>
             )}
             <button
               type="submit"
               disabled={isSubmitting}
-              onClick={(e) => {
+              onClick={() => {
                 if (Object.keys(errors).length > 0) {
                   console.log("Form Errors:", errors);
                 }

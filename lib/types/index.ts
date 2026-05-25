@@ -107,11 +107,25 @@ export interface Invoice {
   status: InvoiceStatus;
   payment_method?: PaymentMethod;
   notes?: string;
+  car_make?: string;
+  car_model?: string;
+  car_year?: number;
+  license_plate?: string;
   created_at: string;
   updated_at: string;
   // Joins
   customers?: Customer;
   invoice_items?: InvoiceItem[];
+  appointments?: {
+    id: string;
+    vehicles?: {
+      id: string;
+      make: string;
+      model: string;
+      year: number;
+      license_plate: string;
+    } | null;
+  } | null;
 }
 
 export interface InvoiceItem {

@@ -22,7 +22,7 @@ import { formatCurrency, formatDate } from "@/lib/utils/formatting";
 export default function InvoiceDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [invoice, setInvoice] = useState<(Invoice & { customers: Customer, invoice_items: InvoiceItem[] }) | null>(null);
+  const [invoice, setInvoice] = useState<(Invoice & { customers: Customer, invoice_items: InvoiceItem[], appointments?: { id: string, vehicles?: { id: string, make: string, model: string, year: number, license_plate: string } | null } | null }) | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -184,6 +184,18 @@ export default function InvoiceDetailPage() {
                 {invoice.customers?.address && <p className="whitespace-pre-wrap">{invoice.customers?.address}</p>}
                 {!invoice.customers?.address && <p>Abu Dhabi, UAE</p>}
               </div>
+              {(invoice.car_make || invoice.car_model || invoice.car_year || invoice.license_plate) && (
+                <div className="mt-4">
+                  <h3 className="font-bold uppercase mb-2 text-xs">VEHICLE</h3>
+                  <div className="space-y-1 text-xs">
+                    {(invoice.car_make || invoice.car_model) && (
+                      <p className="font-semibold text-sm">{[invoice.car_make, invoice.car_model].filter(Boolean).join(' ')}</p>
+                    )}
+                    {invoice.car_year && <p>{invoice.car_year}</p>}
+                    {invoice.license_plate && <p>{invoice.license_plate}</p>}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="w-1/2 flex justify-end">

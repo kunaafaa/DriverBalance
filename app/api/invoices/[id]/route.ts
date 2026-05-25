@@ -6,6 +6,7 @@ const ALLOWED_INVOICE_FIELDS = [
   "customer_id", "appointment_id", "issue_date", "due_date",
   "status", "payment_method", "notes",
   "tax_rate", "discount", "subtotal", "tax_amount", "total",
+  "car_make", "car_model", "car_year", "license_plate",
 ];
 
 export async function GET(
@@ -24,7 +25,7 @@ export async function GET(
   const supabase = createClient();
   const { data, error } = await supabase
     .from("invoices")
-    .select("*, customers(*), invoice_items(*)")
+    .select("*, customers(*), invoice_items(*), appointments(id, vehicles(id, make, model, year, license_plate))")
     .eq("id", id)
     .single();
 

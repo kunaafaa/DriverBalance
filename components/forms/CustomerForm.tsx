@@ -40,7 +40,7 @@ export default function CustomerForm({ initialData, onSubmit, onCancel }: Custom
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-semibold text-gray-700">Email Address</label>
+          <label className="text-sm font-semibold text-gray-700">Email (Optional)</label>
           <input
             {...register("email")}
             type="email"

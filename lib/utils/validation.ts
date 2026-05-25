@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const customerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address").optional().nullable().or(z.literal("")),
+  email: z.string().email().optional().or(z.literal('')),
   phone: z.string().min(10, "Phone must be at least 10 digits"),
   address: z.string().optional().nullable().or(z.literal("")),
   city: z.string().optional().nullable().default("Abu Dhabi"),
@@ -74,6 +74,10 @@ export const invoiceSchema = z.object({
   invoice_number: z.string(),
   issue_date: z.string(),
   due_date: z.string().optional().nullable(),
+  car_make: z.string().optional().nullable().or(z.literal("")),
+  car_model: z.string().optional().nullable().or(z.literal("")),
+  car_year: z.coerce.number().min(1900).max(2100).optional().nullable(),
+  license_plate: z.string().optional().nullable().or(z.literal("")),
   items: z.array(z.object({
     description: z.string().min(1, "Description required"),
     quantity: z.coerce.number().min(1),
