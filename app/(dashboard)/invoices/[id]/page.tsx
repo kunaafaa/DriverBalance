@@ -275,9 +275,10 @@ export default function InvoiceDetailPage() {
 
           {/* Signature Block */}
           <div className="flex justify-end mt-8">
-            <div className="text-right flex flex-col items-end mb-8">
-              <div className="h-[2px] w-40 bg-[#A855F7]"></div>
-              <p className="mt-1 text-[10px] font-bold uppercase text-[#111827]">Authorized Signature</p>
+            <div className="mt-8 print:mt-2 text-center flex flex-col items-center pt-8 print:pt-2 mb-8">
+              <img src="/sign.png" alt="Signature" className="h-16 object-contain mb-1 mx-auto" />
+              <div className="h-[2px] w-40 bg-[#A855F7] mx-auto"></div>
+              <p className="mt-1 text-[10px] font-bold uppercase text-[#111827] text-center">Authorized Signature</p>
             </div>
           </div>
 
