@@ -137,7 +137,7 @@ export default function InvoiceDetailPage() {
 
         <style>{`
           @media print {
-            @page { size: A4; margin: 6mm; }
+            @page { size: A4; margin: 5mm; }
             body { -webkit-print-color-adjust: exact; }
           }
         `}</style>
@@ -145,8 +145,8 @@ export default function InvoiceDetailPage() {
         {/* Top Purple Bar */}
         <div className="h-4 bg-[#111827] w-full shrink-0 border-t-[16px] border-[#A855F7]"></div>
         {/* Logo + Address */}
-        <div className="flex-1 p-10 md:p-16 print:p-4 flex flex-col">
-          <div className="mb-8 print:mb-6 text-sm text-[#111827] flex justify-between items-center">
+        <div className="flex-1 p-10 md:p-16 print:p-3 flex flex-col">
+          <div className="mb-8 print:mb-2 text-sm text-[#111827] flex justify-between items-center">
             <div className="flex items-center gap-3">
               <img
                 src="/sixth-gear-logo.png"
@@ -173,10 +173,12 @@ export default function InvoiceDetailPage() {
             />
           </div>
 
-          {/* Two Column Info Section */}
-          <div className="flex justify-between mb-8 print:mb-3 text-sm text-[#111827]">
-            <div className="w-1/2 pr-4">
-              <p className="text-xs font-bold text-[#111827] mb-4">TRN: 100234567800003</p>
+          {/* TRN */}
+          <p className="text-xs font-bold text-[#111827] mb-3">TRN: 100234567800003</p>
+
+          {/* Three Column Info Section */}
+          <div className="flex justify-between items-start mb-8 print:mb-3 text-sm text-[#111827]">
+            <div className="w-1/3 pr-4">
               <h3 className="font-bold uppercase mb-2 text-xs">BILL TO</h3>
               <div className="space-y-1 text-xs">
                 <p className="font-semibold text-sm">{invoice.customers?.name}</p>
@@ -184,21 +186,23 @@ export default function InvoiceDetailPage() {
                 {invoice.customers?.address && <p className="whitespace-pre-wrap">{invoice.customers?.address}</p>}
                 {!invoice.customers?.address && <p>Abu Dhabi, UAE</p>}
               </div>
+            </div>
+
+            <div className="w-1/3 px-2">
               {(invoice.car_make || invoice.car_model || invoice.car_year || invoice.license_plate) && (
-                <div className="mt-4">
+                <>
                   <h3 className="font-bold uppercase mb-2 text-xs">VEHICLE</h3>
                   <div className="space-y-1 text-xs">
-                    {(invoice.car_make || invoice.car_model) && (
-                      <p className="font-semibold text-sm">{[invoice.car_make, invoice.car_model].filter(Boolean).join(' ')}</p>
+                    {(invoice.car_make || invoice.car_model || invoice.car_year) && (
+                      <p className="font-semibold text-sm">{invoice.car_year} {invoice.car_make} {invoice.car_model}</p>
                     )}
-                    {invoice.car_year && <p>{invoice.car_year}</p>}
-                    {invoice.license_plate && <p>{invoice.license_plate}</p>}
+                    {invoice.license_plate && <p>Plate: {invoice.license_plate}</p>}
                   </div>
-                </div>
+                </>
               )}
             </div>
 
-            <div className="w-1/2 flex justify-end">
+            <div className="w-1/3 flex justify-end">
               <table className="text-sm">
                 <tbody>
                   <tr>
@@ -219,24 +223,24 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Items Table */}
-          <table className="w-full text-[#111827] text-sm mb-2">
+          <table className="w-full text-[#111827] text-sm mb-2 print:text-[9px]">
             <thead>
               <tr className="bg-[#111827] text-white text-xs">
-                <th className="py-2 text-left font-bold uppercase w-12">SR.NO</th>
-                <th className="py-2 text-left font-bold uppercase">DESCRIPTION</th>
-                <th className="py-2 text-left font-bold uppercase w-12">QTY</th>
-                <th className="py-2 text-right font-bold uppercase w-28">UNIT PRICE</th>
-                <th className="py-2 text-right font-bold uppercase w-28">AMOUNT</th>
+                <th className="py-2 print:py-0.5 text-left font-bold uppercase w-12">SR.NO</th>
+                <th className="py-2 print:py-0.5 text-left font-bold uppercase">DESCRIPTION</th>
+                <th className="py-2 print:py-0.5 text-left font-bold uppercase w-12">QTY</th>
+                <th className="py-2 print:py-0.5 text-right font-bold uppercase w-28">UNIT PRICE</th>
+                <th className="py-2 print:py-0.5 text-right font-bold uppercase w-28">AMOUNT</th>
               </tr>
             </thead>
             <tbody>
               {invoice.invoice_items?.map((item, index) => (
                 <tr key={item.id} className="border-b border-gray-200 last:border-0 hover:bg-[#111111]/50 print:text-xs">
-                  <td className="py-2 print:py-1 text-left">{index + 1}</td>
-                  <td className="py-2 print:py-1 text-left font-medium">{item.description}</td>
-                  <td className="py-2 print:py-1 text-right">{item.quantity}</td>
-                  <td className="py-2 print:py-1 text-right">{formatCurrency(item.unit_price)}</td>
-                  <td className="py-2 print:py-1 text-right">{formatCurrency(item.total)}</td>
+                  <td className="py-2 print:py-0.5 text-left">{index + 1}</td>
+                  <td className="py-2 print:py-0.5 text-left font-medium">{item.description}</td>
+                  <td className="py-2 print:py-0.5 text-right">{item.quantity}</td>
+                  <td className="py-2 print:py-0.5 text-right">{formatCurrency(item.unit_price)}</td>
+                  <td className="py-2 print:py-0.5 text-right">{formatCurrency(item.total)}</td>
                 </tr>
               ))}
             </tbody>
@@ -275,7 +279,7 @@ export default function InvoiceDetailPage() {
 
           {/* Signature Block */}
           <div className="flex justify-end mt-8">
-            <div className="mt-8 print:mt-2 text-center flex flex-col items-center pt-8 print:pt-2 mb-8">
+            <div className="mt-8 print:mt-1 text-center flex flex-col items-center pt-8 print:pt-1 mb-8">
               <img src="/sign.png" alt="Signature" className="h-16 object-contain mb-1 mx-auto" />
               <div className="h-[2px] w-40 bg-[#A855F7] mx-auto"></div>
               <p className="mt-1 text-[10px] font-bold uppercase text-[#111827] text-center">Authorized Signature</p>
@@ -283,7 +287,7 @@ export default function InvoiceDetailPage() {
           </div>
 
           {/* Terms & Conditions */}
-          <div className="mt-8 print:mt-4 text-[#111827] border-t border-[#222222] pt-4">
+          <div className="mt-8 print:mt-4 text-[#111827] border-t border-[#222222] pt-4 print:text-[8px]">
             <h3 className="font-bold uppercase mb-2 tracking-wide text-[10px]">TERMS & CONDITIONS</h3>
             <div className="space-y-1 text-xs text-gray-800">
               <p>Please make bank transfers payable to:</p>
