@@ -218,16 +218,10 @@ export default function InvoiceDetailPage() {
             </div>
           </div>
 
-          {/* Total Highlight Bar */}
-          <div className="border-t-2 border-b-2 border-[#A855F7] py-3 mb-8 print:mb-6 flex justify-between items-center">
-            <h2 className="text-3xl font-bold text-[#111827] tracking-tight">Invoice Total</h2>
-            <span className="text-3xl font-bold text-[#111827]">{formatCurrency(invoice.total)}</span>
-          </div>
-
           {/* Items Table */}
-          <table className="w-full text-[#111827] text-sm mb-6 print:mb-4">
+          <table className="w-full text-[#111827] text-sm mb-2">
             <thead>
-              <tr className="border-b-2 border-[#A855F7] text-xs">
+              <tr className="bg-[#111827] text-white text-xs">
                 <th className="py-2 text-left font-bold uppercase w-12">SR.NO</th>
                 <th className="py-2 text-left font-bold uppercase">DESCRIPTION</th>
                 <th className="py-2 text-left font-bold uppercase w-12">QTY</th>
@@ -248,33 +242,42 @@ export default function InvoiceDetailPage() {
             </tbody>
           </table>
 
-          {/* Totals & Signature */}
-          <div className="flex justify-end text-sm text-[#111827]">
-            <div className="w-64">
-              <table className="w-full">
-                <tbody>
+          {/* Totals + Thank You */}
+          <div className="flex justify-between items-end text-sm text-[#111827] mb-6">
+            <p className="italic text-gray-500 text-sm">Thank you for your business!</p>
+            <table>
+              <tbody>
+                <tr>
+                  <td className="py-1 text-right pr-6 text-xs font-bold uppercase text-gray-500">SUBTOTAL</td>
+                  <td className="py-1 text-right">{formatCurrency(invoice.subtotal)}</td>
+                </tr>
+                <tr>
+                  <td className="py-1 text-right pr-6 text-xs font-bold uppercase text-gray-500">TAX RATE</td>
+                  <td className="py-1 text-right">5%</td>
+                </tr>
+                <tr>
+                  <td className="py-1 text-right pr-6 text-xs font-bold uppercase text-gray-500">TAX</td>
+                  <td className="py-1 text-right">{formatCurrency(invoice.tax_amount)}</td>
+                </tr>
+                {invoice.discount > 0 && (
                   <tr>
-                    <td className="py-1 text-right pr-6">Subtotal</td>
-                    <td className="py-1 text-right">{formatCurrency(invoice.subtotal)}</td>
+                    <td className="py-1 text-right pr-6 text-xs font-bold uppercase text-red-600">DISCOUNT</td>
+                    <td className="py-1 text-right text-red-600">-{formatCurrency(invoice.discount)}</td>
                   </tr>
-                  <tr>
-                    <td className="py-1 text-right pr-6">VAT 5%</td>
-                    <td className="py-1 text-right">{formatCurrency(invoice.tax_amount)}</td>
-                  </tr>
-                  {invoice.discount > 0 && (
-                    <tr>
-                      <td className="py-1 text-right pr-6 text-red-600">Discount</td>
-                      <td className="py-1 text-right text-red-600">-{formatCurrency(invoice.discount)}</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                )}
+                <tr>
+                  <td className="py-1 text-right pr-6 text-xs font-bold uppercase">TOTAL</td>
+                  <td className="bg-[#A855F7] text-white font-bold text-right px-3 py-1">{formatCurrency(invoice.total)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-              {/* Signature Block */}
-              <div className="mt-8 text-right flex flex-col items-end pt-8">
-                <div className="h-[2px] w-40 bg-[#A855F7]"></div>
-                <p className="mt-1 text-[10px] font-bold uppercase text-[#111827]">Authorized Signature</p>
-              </div>
+          {/* Signature Block */}
+          <div className="flex justify-end mt-8">
+            <div className="text-right flex flex-col items-end mb-8">
+              <div className="h-[2px] w-40 bg-[#A855F7]"></div>
+              <p className="mt-1 text-[10px] font-bold uppercase text-[#111827]">Authorized Signature</p>
             </div>
           </div>
 
