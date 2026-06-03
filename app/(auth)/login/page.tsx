@@ -52,8 +52,13 @@ export default function LoginPage() {
         return;
       }
 
-      // ── Step 3: Success — redirect to dashboard ──
-      window.location.href = "/";
+      // ── Step 3: Success — redirect to original URL or dashboard ──
+      const redirectParam = new URLSearchParams(window.location.search).get("redirect")
+      const safeRedirect =
+        redirectParam && redirectParam.startsWith("/") && !redirectParam.startsWith("//")
+          ? redirectParam
+          : "/"
+      window.location.href = safeRedirect
     } catch {
       setError("A system error occurred. Please try again later.");
       setLoading(false);
