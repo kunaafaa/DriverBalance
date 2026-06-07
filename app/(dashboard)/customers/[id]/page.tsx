@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
-import { Customer, Vehicle, Appointment, Invoice } from "@/lib/types";
+import { Customer, Vehicle, Appointment, Invoice, DiagnosticReport } from "@/lib/types";
 import {
   User,
   Phone,
@@ -13,7 +13,8 @@ import {
   Plus,
   Edit,
   Clock,
-  Trash2
+  Trash2,
+  Stethoscope
 } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatDate } from "@/lib/utils/formatting";
@@ -25,21 +26,24 @@ export default function CustomerProfilePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [diagnosticReports, setDiagnosticReports] = useState<DiagnosticReport[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [cRes, vRes, aRes, iRes] = await Promise.all([
+        const [cRes, vRes, aRes, iRes, dRes] = await Promise.all([
           axios.get(`/api/customers/${id}`),
           axios.get(`/api/vehicles?customer_id=${id}`),
           axios.get(`/api/appointments?customer_id=${id}`),
           axios.get(`/api/invoices?customer_id=${id}`),
+          axios.get(`/api/diagnostic-reports?customer_id=${id}`),
         ]);
         setCustomer(cRes.data);
         setVehicles(vRes.data);
         setAppointments(aRes.data);
         setInvoices(iRes.data);
+        setDiagnosticReports(dRes.data);
       } catch (error) {
         console.error("Failed to fetch customer data", error);
       } finally {
@@ -231,6 +235,49 @@ export default function CustomerProfilePage() {
                 ))}
                 {invoices.length === 0 && (
                   <div className="p-10 text-center text-gray-400 font-bold text-sm">No activity history found.</div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Diagnostic Reports */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between px-2">
+              <h3 className="text-lg font-black text-white tracking-tight flex items-center">
+                <Stethoscope className="w-5 h-5 mr-3 text-white" />
+                Diagnostic Reports
+              </h3>
+              <Link href={`/diagnostic-reports/new?customer_id=${id}`} className="text-xs font-black text-white uppercase tracking-widest hover:underline">
+                New Report
+              </Link>
+            </div>
+            <div className="bg-[#0D0D0D] rounded-[35px] border border-[#1A1A1A] shadow-sm overflow-hidden">
+              <div className="divide-y divide-gray-50">
+                {diagnosticReports.slice(0, 5).map(report => (
+                  <Link
+                    key={report.id}
+                    href={`/diagnostic-reports/${report.id}`}
+                    className="p-6 flex items-center justify-between hover:bg-[#111111]/50 transition-all"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-[#A855F7]/10 rounded-xl flex items-center justify-center">
+                        <Stethoscope className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">Report {report.report_number}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{formatDate(report.created_at)}</p>
+                      </div>
+                    </div>
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                      report.status === 'verified' ? 'bg-green-100 text-green-600' :
+                      report.status === 'confirmed' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {report.status}
+                    </span>
+                  </Link>
+                ))}
+                {diagnosticReports.length === 0 && (
+                  <div className="p-10 text-center text-gray-400 font-bold text-sm">No diagnostic reports found.</div>
                 )}
               </div>
             </div>

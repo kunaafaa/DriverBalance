@@ -42,3 +42,8 @@ export function generateQuotationNumber(index: number): string {
   const year = new Date().getFullYear();
   return `QUO-${year}-${String(index).padStart(3, "0")}`;
 }
+
+// Generate diagnostic report number (DM-0001)
+export function generateDiagnosticReportNumber(index: number): string {
+  return `DM-${String(index).padStart(4, "0")}`;
+}

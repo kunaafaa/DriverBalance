@@ -67,6 +67,43 @@ export const quotationSchema = z.object({
   notes: z.string().optional().nullable().or(z.literal("")),
 });
 
+export const diagnosticReportSchema = z.object({
+  report_number: z.string(),
+  customer_id: z.string().uuid("Invalid customer").optional().nullable().or(z.literal("")),
+  vehicle_id: z.string().uuid("Invalid vehicle").optional().nullable().or(z.literal("")),
+  lead_engineer: z.string().optional().nullable().or(z.literal("")),
+  platform: z.string().optional().nullable().or(z.literal("")),
+  status: z.enum(["draft", "confirmed", "verified"]).default("draft"),
+  reported_symptom: z.string().optional().nullable().or(z.literal("")),
+  occurs_when: z.string().optional().nullable().or(z.literal("")),
+  prior_workshops: z.string().optional().nullable().or(z.literal("")),
+  brief: z.string().optional().nullable().or(z.literal("")),
+  fault_codes: z.array(z.object({
+    code: z.string().optional().or(z.literal("")),
+    description: z.string().optional().or(z.literal("")),
+  })).default([]),
+  measurements: z.array(z.object({
+    parameter: z.string().optional().or(z.literal("")),
+    measured: z.string().optional().or(z.literal("")),
+    spec: z.string().optional().or(z.literal("")),
+    read: z.string().optional().or(z.literal("")),
+  })).default([]),
+  root_cause: z.string().optional().nullable().or(z.literal("")),
+  required_parts: z.array(z.object({
+    name: z.string().optional().or(z.literal("")),
+    part_number: z.string().optional().or(z.literal("")),
+    price: z.coerce.number().min(0).default(0),
+  })).default([]),
+  labour_hours: z.coerce.number().min(0).default(0),
+  labour_cost: z.coerce.number().min(0).default(0),
+  advisory_notes: z.string().optional().nullable().or(z.literal("")),
+  before_fuel_trim: z.string().optional().nullable().or(z.literal("")),
+  after_fuel_trim: z.string().optional().nullable().or(z.literal("")),
+  verification_status: z.string().optional().nullable().or(z.literal("")),
+  diagnostic_fee: z.coerce.number().min(0).default(0),
+  notes: z.string().optional().nullable().or(z.literal("")),
+});
+
 export const invoiceSchema = z.object({
   appointment_id: z.string().uuid().optional().nullable(),
   customer_id: z.string().uuid("Invalid customer"),

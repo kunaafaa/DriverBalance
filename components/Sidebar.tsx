@@ -10,6 +10,7 @@ import {
   FileText,
   Package,
   ClipboardList,
+  Stethoscope,
   Settings,
   LogOut
 } from "lucide-react";
@@ -23,6 +24,7 @@ const menuItems = [
   { name: "Appointments", icon: Calendar, href: "/appointments" },
   { name: "Invoices", icon: FileText, href: "/invoices" },
   { name: "Quotations", icon: ClipboardList, href: "/quotations" },
+  { name: "Diagnostic Reports", icon: Stethoscope, href: "/diagnostic-reports" },
   { name: "Inventory", icon: Package, href: "/inventory" },
 ];
 

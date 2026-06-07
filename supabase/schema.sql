@@ -165,6 +165,35 @@ create table if not exists quotation_items (
   created_at timestamp with time zone default now()
 );
 
+-- 11. Diagnostic Reports Table
+create table if not exists diagnostic_reports (
+  id uuid primary key default uuid_generate_v4(),
+  report_number text unique not null,
+  customer_id uuid references customers(id) on delete set null,
+  vehicle_id uuid references vehicles(id) on delete set null,
+  lead_engineer text,
+  platform text,
+  status text check (status in ('draft', 'confirmed', 'verified')) default 'draft',
+  reported_symptom text,
+  occurs_when text,
+  prior_workshops text,
+  brief text,
+  fault_codes jsonb default '[]',
+  measurements jsonb default '[]',
+  root_cause text,
+  required_parts jsonb default '[]',
+  labour_hours decimal(10,2) default 0,
+  labour_cost decimal(10,2) default 0,
+  advisory_notes text,
+  before_fuel_trim text,
+  after_fuel_trim text,
+  verification_status text,
+  diagnostic_fee decimal(10,2) default 0,
+  notes text,
+  created_at timestamp with time zone default now(),
+  updated_at timestamp with time zone default now()
+);
+
 -- RLS (Row Level Security) - Simplified for now
 -- In a real app, you would add policies for 'authenticated' users
 
@@ -178,6 +207,7 @@ alter table invoice_items enable row level security;
 alter table service_history enable row level security;
 alter table quotations enable row level security;
 alter table quotation_items enable row level security;
+alter table diagnostic_reports enable row level security;
 
 -- Policies (Allow all for research purposes, should be restricted in prod)
 create policy "Enable all for authenticated users" on customers for all to authenticated using (true);
@@ -190,3 +220,4 @@ create policy "Enable all for authenticated users" on invoice_items for all to a
 create policy "Enable all for authenticated users" on service_history for all to authenticated using (true);
 create policy "Enable all for authenticated users" on quotations for all to authenticated using (true);
 create policy "Enable all for authenticated users" on quotation_items for all to authenticated using (true);
+create policy "Enable all for authenticated users" on diagnostic_reports for all to authenticated using (true);

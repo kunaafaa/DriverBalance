@@ -1,6 +1,7 @@
 export type DatabaseStatus = "pending" | "confirmed" | "in_progress" | "completed" | "cancelled";
 export type InvoiceStatus = "draft" | "issued" | "paid" | "overdue" | "cancelled";
 export type QuotationStatus = "draft" | "sent" | "accepted" | "rejected" | "expired";
+export type DiagnosticReportStatus = "draft" | "confirmed" | "verified";
 export type ItemType = "service" | "part" | "labor";
 export type PaymentMethod = "cash" | "card" | "bank_transfer" | "pending";
 
@@ -171,6 +172,55 @@ export interface QuotationItem {
   total: number;
   item_type: ItemType;
   created_at: string;
+}
+
+export interface FaultCode {
+  code: string;
+  description: string;
+}
+
+export interface Measurement {
+  parameter: string;
+  measured: string;
+  spec: string;
+  read: string;
+}
+
+export interface RequiredPart {
+  name: string;
+  part_number: string;
+  price: number;
+}
+
+export interface DiagnosticReport {
+  id: string;
+  report_number: string;
+  customer_id?: string;
+  vehicle_id?: string;
+  lead_engineer?: string;
+  platform?: string;
+  status: DiagnosticReportStatus;
+  reported_symptom?: string;
+  occurs_when?: string;
+  prior_workshops?: string;
+  brief?: string;
+  fault_codes: FaultCode[];
+  measurements: Measurement[];
+  root_cause?: string;
+  required_parts: RequiredPart[];
+  labour_hours: number;
+  labour_cost: number;
+  advisory_notes?: string;
+  before_fuel_trim?: string;
+  after_fuel_trim?: string;
+  verification_status?: string;
+  diagnostic_fee: number;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Joins
+  customers?: Customer;
+  vehicles?: Vehicle;
 }
 
 export interface ServiceHistory {

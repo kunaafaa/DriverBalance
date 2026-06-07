@@ -3,18 +3,19 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import axios from "axios";
-import { Vehicle, Customer, Appointment, Invoice, ServiceHistory } from "@/lib/types";
-import { 
-  Car, 
-  User, 
-  Calendar, 
+import { Vehicle, Customer, Appointment, Invoice, ServiceHistory, DiagnosticReport } from "@/lib/types";
+import {
+  Car,
+  User,
+  Calendar,
   ChevronLeft,
   History,
   Activity,
   Plus,
   ShieldCheck,
   Fuel,
-  Hash
+  Hash,
+  Stethoscope
 } from "lucide-react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils/formatting";
@@ -23,17 +24,20 @@ export default function VehicleProfilePage() {
   const { id } = useParams();
   const [vehicle, setVehicle] = useState<(Vehicle & { customers: Customer }) | null>(null);
   const [history, setHistory] = useState<any[]>([]);
+  const [diagnosticReports, setDiagnosticReports] = useState<DiagnosticReport[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [vRes, hRes] = await Promise.all([
+        const [vRes, hRes, dRes] = await Promise.all([
           axios.get(`/api/vehicles/${id}`),
           axios.get(`/api/vehicles/${id}/history`), // Assuming this endpoint exists or filter by vehicle_id
+          axios.get(`/api/diagnostic-reports?vehicle_id=${id}`),
         ]);
         setVehicle(vRes.data);
         setHistory(hRes.data || []);
+        setDiagnosticReports(dRes.data || []);
       } catch (error) {
         console.error("Failed to fetch vehicle data", error);
       } finally {
@@ -200,6 +204,49 @@ export default function VehicleProfilePage() {
                   </div>
                 </div>
               )}
+            </div>
+          </section>
+
+          {/* Diagnostic Reports */}
+          <section className="space-y-6">
+            <div className="flex items-center justify-between px-2">
+              <h3 className="text-lg font-black text-white tracking-tight flex items-center">
+                <Stethoscope className="w-5 h-5 mr-3 text-white" />
+                Diagnostic Reports
+              </h3>
+              <Link href={`/diagnostic-reports/new?vehicle_id=${id}&customer_id=${vehicle.customer_id}`} className="text-xs font-black text-white uppercase tracking-widest hover:underline">
+                New Report
+              </Link>
+            </div>
+            <div className="bg-[#0D0D0D] rounded-[35px] border border-[#1A1A1A] shadow-sm overflow-hidden">
+              <div className="divide-y divide-gray-50">
+                {diagnosticReports.map(report => (
+                  <Link
+                    key={report.id}
+                    href={`/diagnostic-reports/${report.id}`}
+                    className="p-6 flex items-center justify-between hover:bg-[#111111]/50 transition-all"
+                  >
+                    <div className="flex items-center space-x-4">
+                      <div className="w-10 h-10 bg-[#A855F7]/10 rounded-xl flex items-center justify-center">
+                        <Stethoscope className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-white">Report {report.report_number}</p>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{formatDate(report.created_at)}</p>
+                      </div>
+                    </div>
+                    <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${
+                      report.status === 'verified' ? 'bg-green-100 text-green-600' :
+                      report.status === 'confirmed' ? 'bg-blue-100 text-blue-600' : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {report.status}
+                    </span>
+                  </Link>
+                ))}
+                {diagnosticReports.length === 0 && (
+                  <div className="p-10 text-center text-gray-400 font-bold text-sm">No diagnostic reports found for this vehicle.</div>
+                )}
+              </div>
             </div>
           </section>
         </div>
