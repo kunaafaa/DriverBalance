@@ -105,6 +105,7 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
       : null
   );
   const [loadingVehicle, setLoadingVehicle] = useState(false);
+  const [vehicleOptions, setVehicleOptions] = useState<Vehicle[]>([]);
 
   const {
     register,
@@ -157,39 +158,61 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
     fetchCustomers();
   }, []);
 
+  const clearVehicleFields = () => {
+    setValue("car_make", "");
+    setValue("car_model", "");
+    setValue("car_year", undefined as any);
+    setValue("license_plate", "");
+  };
+
+  const applyVehicle = (v: Vehicle) => {
+    setVehicleInfo(v);
+    setValue("car_make", v.make);
+    setValue("car_model", v.model);
+    setValue("car_year", v.year);
+    setValue("license_plate", v.license_plate);
+  };
+
   const fetchVehicleForCustomer = async (customerId: string) => {
     if (!customerId) {
       setVehicleInfo(null);
-      setValue("car_make", "");
-      setValue("car_model", "");
-      setValue("car_year", undefined as any);
-      setValue("license_plate", "");
+      setVehicleOptions([]);
+      clearVehicleFields();
       return;
     }
     setLoadingVehicle(true);
     try {
       const { data } = await axios.get(`/api/vehicles?customer_id=${customerId}`);
       const vehicles = data as Vehicle[];
-      if (vehicles.length > 0) {
-        const v = vehicles[0];
-        setVehicleInfo(v);
-        setValue("car_make", v.make);
-        setValue("car_model", v.model);
-        setValue("car_year", v.year);
-        setValue("license_plate", v.license_plate);
-      } else {
+      if (vehicles.length === 1) {
+        setVehicleOptions([]);
+        applyVehicle(vehicles[0]);
+      } else if (vehicles.length > 1) {
+        setVehicleOptions(vehicles);
         setVehicleInfo(null);
-        setValue("car_make", "");
-        setValue("car_model", "");
-        setValue("car_year", undefined as any);
-        setValue("license_plate", "");
+        clearVehicleFields();
+      } else {
+        setVehicleOptions([]);
+        setVehicleInfo(null);
+        clearVehicleFields();
       }
     } catch (error) {
       console.error("Failed to fetch vehicle", error);
       setVehicleInfo(null);
+      setVehicleOptions([]);
     } finally {
       setLoadingVehicle(false);
     }
+  };
+
+  const handleVehicleOptionSelect = (vehicleId: string) => {
+    const v = vehicleOptions.find((veh) => veh.id === vehicleId);
+    if (!v) {
+      setVehicleInfo(null);
+      clearVehicleFields();
+      return;
+    }
+    applyVehicle(v);
   };
 
   const customerSelectReg = register("customer_id");
@@ -293,26 +316,51 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
 
         {loadingVehicle ? (
           <p className="text-xs text-gray-500 font-bold animate-pulse">Fetching vehicle info...</p>
-        ) : vehicleInfo ? (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { label: "Make", value: vehicleInfo.make },
-              { label: "Model", value: vehicleInfo.model },
-              { label: "Year", value: vehicleInfo.year?.toString() },
-              { label: "License Plate", value: vehicleInfo.license_plate },
-            ].map(({ label, value }) => (
-              <div key={label} className="space-y-1">
-                <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{label}</p>
-                <p className="px-4 py-2 bg-[#0D0D0D] rounded-xl border border-[#1A1A1A] text-white font-bold text-sm">
-                  {value || "—"}
-                </p>
-              </div>
-            ))}
-          </div>
         ) : (
-          <p className="text-xs text-gray-600 font-bold">
-            No vehicle found for this customer. Select a customer to auto-fill vehicle details.
-          </p>
+          <div className="space-y-4">
+            {vehicleOptions.length > 1 && (
+              <div className="space-y-2">
+                <label className="flex items-center text-xs font-black text-gray-400 uppercase tracking-widest">
+                  <Car className="w-3 h-3 mr-2 text-[#A855F7]" />
+                  Select Vehicle
+                </label>
+                <select
+                  value={vehicleInfo?.id || ""}
+                  onChange={(e) => handleVehicleOptionSelect(e.target.value)}
+                  className="w-full bg-[#0D0D0D] px-4 py-2 rounded-xl border border-[#1A1A1A] font-bold text-white outline-none focus:ring-2 focus:ring-[#A855F7]"
+                >
+                  <option value="">Select a vehicle...</option>
+                  {vehicleOptions.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.year} {v.make} {v.model} — Plate: {v.license_plate}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            {vehicleInfo ? (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: "Make", value: vehicleInfo.make },
+                  { label: "Model", value: vehicleInfo.model },
+                  { label: "Year", value: vehicleInfo.year?.toString() },
+                  { label: "License Plate", value: vehicleInfo.license_plate },
+                ].map(({ label, value }) => (
+                  <div key={label} className="space-y-1">
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{label}</p>
+                    <p className="px-4 py-2 bg-[#0D0D0D] rounded-xl border border-[#1A1A1A] text-white font-bold text-sm">
+                      {value || "—"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : vehicleOptions.length === 0 ? (
+              <p className="text-xs text-gray-600 font-bold">
+                No vehicle found for this customer. Select a customer to auto-fill vehicle details.
+              </p>
+            ) : null}
+          </div>
         )}
 
         {/* Hidden fields so react-hook-form includes vehicle data in submission */}
