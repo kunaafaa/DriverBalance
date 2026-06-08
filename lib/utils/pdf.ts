@@ -157,9 +157,9 @@ export const generateInvoicePDF = async (
   doc.text("ABU DHABI, UAE", brandTextX, y + 3.5);
 
   if (dmLogo) {
-    const dmHeight = 25;
+    const dmHeight = 26.5;
     const dmWidth = dmHeight * (1280 / 1804);
-    doc.addImage(dmLogo, "PNG", pageWidth - margin - dmWidth, y - 9, dmWidth, dmHeight);
+    doc.addImage(dmLogo, "PNG", pageWidth - margin - dmWidth, y - 12.25, dmWidth, dmHeight);
   }
 
   y += 17;
