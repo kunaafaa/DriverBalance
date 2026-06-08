@@ -49,22 +49,29 @@ export default function InvoicesPage() {
   const router = useRouter();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pages: 1,
+    total: 0,
+  });
+
+  const fetchInvoices = async (page = 1) => {
+    setLoading(true);
+    try {
+      const { data } = await axios.get("/api/invoices", {
+        params: { page, limit: 20 },
+      });
+      setInvoices(data.data);
+      setPagination(data.pagination);
+    } catch (error) {
+      console.error("Failed to fetch invoices", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const { data } = await axios.get("/api/invoices");
-        if (isMounted) setInvoices(data);
-      } catch (error) {
-        if (isMounted) console.error("Failed to fetch invoices", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchData();
-    return () => { isMounted = false; };
+    fetchInvoices(1);
   }, []);
 
   return (
@@ -141,6 +148,33 @@ export default function InvoicesPage() {
               <p className="text-gray-400 text-sm">Create your first invoice to get started.</p>
             </div>
           )}
+
+          {/* Pagination */}
+          <div className="px-6 py-4 bg-[#111111] border-t border-[#1A1A1A] flex items-center justify-between">
+            <div className="text-sm text-gray-500 font-medium">
+              Showing <span className="text-white">{invoices.length}</span> of{" "}
+              <span className="text-white">{pagination.total}</span> invoices
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                disabled={pagination.page === 1}
+                onClick={() => fetchInvoices(pagination.page - 1)}
+                className="px-4 py-2 text-sm font-bold text-gray-600 bg-[#0D0D0D] border border-[#222222] rounded-xl hover:bg-[#111111] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Previous
+              </button>
+              <div className="px-4 py-2 text-sm font-bold bg-[#A855F7] text-white rounded-xl">
+                {pagination.page}
+              </div>
+              <button
+                disabled={pagination.page === pagination.pages}
+                onClick={() => fetchInvoices(pagination.page + 1)}
+                className="px-4 py-2 text-sm font-bold text-gray-600 bg-[#0D0D0D] border border-[#222222] rounded-xl hover:bg-[#111111] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

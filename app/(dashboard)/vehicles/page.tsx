@@ -11,14 +11,20 @@ export default function VehiclesPage() {
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pages: 1,
+    total: 0,
+  });
 
-  const fetchVehicles = async (searchQuery = "") => {
+  const fetchVehicles = async (page = 1, searchQuery = "") => {
     setLoading(true);
     try {
       const { data } = await axios.get(`/api/vehicles`, {
-        params: { search: searchQuery },
+        params: { page, limit: 20, search: searchQuery },
       });
-      setVehicles(data);
+      setVehicles(data.data);
+      setPagination(data.pagination);
     } catch (error) {
       console.error("Failed to fetch vehicles", error);
     } finally {
@@ -28,7 +34,7 @@ export default function VehiclesPage() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      fetchVehicles(search);
+      fetchVehicles(1, search);
     }, 500);
     return () => clearTimeout(timer);
   }, [search]);
@@ -37,7 +43,7 @@ export default function VehiclesPage() {
     if (!confirm("Are you sure? This will delete all history for this vehicle.")) return;
     try {
       await axios.delete(`/api/vehicles/${id}`);
-      fetchVehicles(search);
+      fetchVehicles(pagination.page, search);
     } catch (error) {
       alert("Failed to delete vehicle");
     }
@@ -78,6 +84,8 @@ export default function VehiclesPage() {
       ) : (
         <VehiclesTable
           vehicles={vehicles}
+          pagination={pagination}
+          onPageChange={(page) => fetchVehicles(page, search)}
           onDelete={handleDelete}
         />
       )}

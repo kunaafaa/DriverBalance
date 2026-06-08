@@ -56,35 +56,33 @@ export default function DiagnosticReportsPage() {
   const [reports, setReports] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pages: 1,
+    total: 0,
+  });
+
+  const fetchReports = async (page = 1, searchQuery = "") => {
+    setLoading(true);
+    try {
+      const { data } = await axios.get("/api/diagnostic-reports", {
+        params: { page, limit: 20, search: searchQuery },
+      });
+      setReports(data.data);
+      setPagination(data.pagination);
+    } catch (error) {
+      console.error("Failed to fetch diagnostic reports", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let isMounted = true;
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const { data } = await axios.get("/api/diagnostic-reports");
-        if (isMounted) setReports(data);
-      } catch (error) {
-        if (isMounted) console.error("Failed to fetch diagnostic reports", error);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-    fetchData();
-    return () => { isMounted = false; };
-  }, []);
-
-  const filteredReports = reports.filter((r) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      r.report_number?.toLowerCase().includes(q) ||
-      r.customers?.name?.toLowerCase().includes(q) ||
-      r.vehicles?.make?.toLowerCase().includes(q) ||
-      r.vehicles?.model?.toLowerCase().includes(q) ||
-      r.vehicles?.license_plate?.toLowerCase().includes(q)
-    );
-  });
+    const timer = setTimeout(() => {
+      fetchReports(1, search);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -131,7 +129,7 @@ export default function DiagnosticReportsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredReports.map((report) => (
+                {reports.map((report) => (
                   <tr
                     key={report.id}
                     className="hover:bg-[#9333EA]/10 transition-all cursor-pointer"
@@ -163,13 +161,40 @@ export default function DiagnosticReportsPage() {
             </table>
           </div>
 
-          {filteredReports.length === 0 && (
+          {reports.length === 0 && (
             <div className="py-20 text-center">
               <Stethoscope className="w-12 h-12 text-gray-200 mx-auto mb-4" />
               <h3 className="text-gray-500 font-bold">No diagnostic reports found</h3>
               <p className="text-gray-400 text-sm">Create your first diagnostic report to get started.</p>
             </div>
           )}
+
+          {/* Pagination */}
+          <div className="px-6 py-4 bg-[#111111] border-t border-[#1A1A1A] flex items-center justify-between">
+            <div className="text-sm text-gray-500 font-medium">
+              Showing <span className="text-white">{reports.length}</span> of{" "}
+              <span className="text-white">{pagination.total}</span> reports
+            </div>
+            <div className="flex items-center space-x-2">
+              <button
+                disabled={pagination.page === 1}
+                onClick={() => fetchReports(pagination.page - 1, search)}
+                className="px-4 py-2 text-sm font-bold text-gray-600 bg-[#0D0D0D] border border-[#222222] rounded-xl hover:bg-[#111111] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Previous
+              </button>
+              <div className="px-4 py-2 text-sm font-bold bg-[#A855F7] text-white rounded-xl">
+                {pagination.page}
+              </div>
+              <button
+                disabled={pagination.page === pagination.pages}
+                onClick={() => fetchReports(pagination.page + 1, search)}
+                className="px-4 py-2 text-sm font-bold text-gray-600 bg-[#0D0D0D] border border-[#222222] rounded-xl hover:bg-[#111111] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Next
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

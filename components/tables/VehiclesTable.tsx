@@ -7,10 +7,16 @@ import { Eye, Trash2, Car, Hash, Calendar as CalendarIcon } from "lucide-react";
 
 interface VehiclesTableProps {
   vehicles: (Vehicle & { customers?: { name: string } })[];
+  pagination: {
+    page: number;
+    pages: number;
+    total: number;
+  };
+  onPageChange: (page: number) => void;
   onDelete: (id: string) => void;
 }
 
-export default function VehiclesTable({ vehicles, onDelete }: VehiclesTableProps) {
+export default function VehiclesTable({ vehicles, pagination, onPageChange, onDelete }: VehiclesTableProps) {
   return (
     <div className="bg-[#0D0D0D] rounded-2xl shadow-sm border border-[#1A1A1A] overflow-hidden">
       <div className="overflow-x-auto">
@@ -94,6 +100,33 @@ export default function VehiclesTable({ vehicles, onDelete }: VehiclesTableProps
           <p className="text-gray-400 text-sm">Add your first vehicle to get started.</p>
         </div>
       )}
+
+      {/* Pagination */}
+      <div className="px-6 py-4 bg-[#111111] border-t border-[#1A1A1A] flex items-center justify-between">
+        <div className="text-sm text-gray-500 font-medium">
+          Showing <span className="text-white">{vehicles.length}</span> of{" "}
+          <span className="text-white">{pagination.total}</span> vehicles
+        </div>
+        <div className="flex items-center space-x-2">
+          <button
+            disabled={pagination.page === 1}
+            onClick={() => onPageChange(pagination.page - 1)}
+            className="px-4 py-2 text-sm font-bold text-gray-600 bg-[#0D0D0D] border border-[#222222] rounded-xl hover:bg-[#111111] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Previous
+          </button>
+          <div className="px-4 py-2 text-sm font-bold bg-[#A855F7] text-white rounded-xl">
+            {pagination.page}
+          </div>
+          <button
+            disabled={pagination.page === pagination.pages}
+            onClick={() => onPageChange(pagination.page + 1)}
+            className="px-4 py-2 text-sm font-bold text-gray-600 bg-[#0D0D0D] border border-[#222222] rounded-xl hover:bg-[#111111] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+          >
+            Next
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

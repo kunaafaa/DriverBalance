@@ -3,6 +3,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { generateInvoiceNumber } from "@/lib/utils/formatting";
 
+const INVOICE_LIST_COLUMNS =
+  "id, invoice_number, issue_date, due_date, total, status, customer_id, created_at, customers(name)";
+
 export async function GET(request: NextRequest) {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -12,20 +15,43 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get("status");
   const customerId = searchParams.get("customer_id");
 
-  let query = supabase.from("invoices").select("*, customers(*)");
+  // Related-record lookups (customer profile) need the full unpaginated set
+  // and a plain array response — keep that shape.
+  if (customerId) {
+    let related = supabase.from("invoices").select(INVOICE_LIST_COLUMNS).eq("customer_id", customerId);
+    if (status) related = related.eq("status", status);
+
+    const { data, error } = await related.order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Supabase Error (Invoices):", error);
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json(data);
+  }
+
+  const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get("limit") || "20")));
+  const offset = (page - 1) * limit;
+
+  let query = supabase.from("invoices").select(INVOICE_LIST_COLUMNS, { count: "exact" });
 
   if (status) query = query.eq("status", status);
-  if (customerId) query = query.eq("customer_id", customerId);
 
-  const { data, error } = await query.order("invoice_number", { ascending: false });
+  const { data, error, count } = await query
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
 
   if (error) {
     console.error("Supabase Error (Invoices):", error);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-
-  return NextResponse.json(data);
+  return NextResponse.json({
+    data,
+    pagination: { page, limit, total: count || 0, pages: Math.ceil((count || 0) / limit) },
+  });
 }
 
 export async function POST(request: NextRequest) {
