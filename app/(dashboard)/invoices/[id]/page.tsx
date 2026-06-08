@@ -19,6 +19,7 @@ import {
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import { formatCurrency, formatDate } from "@/lib/utils/formatting";
+import { generateInvoicePDF } from "@/lib/utils/pdf";
 
 export default function InvoiceDetailPage() {
   const { id } = useParams();
@@ -158,7 +159,7 @@ This is an official invoice issued by DriverMade Automotive Services, Musaffah, 
             Print
           </button>
           <button
-            onClick={() => window.print()}
+            onClick={() => generateInvoicePDF(invoice)}
             className="px-4 py-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center hover:bg-[#111111]"
           >
             <Download className="w-4 h-4 mr-2 text-[#A855F7]" />

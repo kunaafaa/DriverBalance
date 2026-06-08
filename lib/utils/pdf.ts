@@ -20,9 +20,11 @@ const drawSimpleTable = (
     rowFill?: (rowIndex: number) => RGB | null;
     rowTextColor?: (rowIndex: number) => RGB | null;
     rowBold?: (rowIndex: number) => boolean;
+    wrapColumn?: number;
   } = {}
 ): number => {
   const rowHeight = 7;
+  const lineHeight = 4;
   const pageHeight = doc.internal.pageSize.getHeight();
   const bottomLimit = pageHeight - margin;
   const {
@@ -32,6 +34,7 @@ const drawSimpleTable = (
     rowFill,
     rowTextColor,
     rowBold,
+    wrapColumn,
   } = options;
 
   let y = startY;
@@ -54,7 +57,17 @@ const drawSimpleTable = (
   drawHead();
 
   rows.forEach((row, ri) => {
-    if (y + rowHeight > bottomLimit) {
+    // Wrap the designated column's text so long content isn't cut off, and grow
+    // the row to fit it — other rows/columns keep the fixed single-line height.
+    let wrappedLines: string[] | null = null;
+    let thisRowHeight = rowHeight;
+    if (wrapColumn !== undefined && row[wrapColumn] !== undefined) {
+      const lines: string[] = doc.splitTextToSize(String(row[wrapColumn]), colWidths[wrapColumn] - 6);
+      wrappedLines = lines;
+      thisRowHeight = Math.max(rowHeight, lines.length * lineHeight + 3);
+    }
+
+    if (y + thisRowHeight > bottomLimit) {
       doc.addPage();
       y = margin;
       drawHead();
@@ -62,7 +75,7 @@ const drawSimpleTable = (
     const fill = rowFill?.(ri);
     if (fill) {
       doc.setFillColor(fill[0], fill[1], fill[2]);
-      doc.rect(margin, y, tableWidth, rowHeight, "F");
+      doc.rect(margin, y, tableWidth, thisRowHeight, "F");
     }
     const tc = rowTextColor?.(ri) || [51, 65, 85];
     doc.setTextColor(tc[0], tc[1], tc[2]);
@@ -71,112 +84,270 @@ const drawSimpleTable = (
     let x = margin;
     row.forEach((cell, ci) => {
       const a = align[ci] === "right" ? "right" : "left";
-      doc.text(String(cell), a === "right" ? x + colWidths[ci] - 3 : x + 3, y + 4.8, { align: a });
+      if (ci === wrapColumn && wrappedLines) {
+        wrappedLines.forEach((line, li) => {
+          doc.text(line, x + 3, y + 4.8 + li * lineHeight, { align: "left" });
+        });
+      } else {
+        doc.text(String(cell), a === "right" ? x + colWidths[ci] - 3 : x + 3, y + 4.8, { align: a });
+      }
       x += colWidths[ci];
     });
     doc.setDrawColor(226, 232, 240);
     doc.setLineWidth(0.2);
-    doc.line(margin, y + rowHeight, margin + tableWidth, y + rowHeight);
-    y += rowHeight;
+    doc.line(margin, y + thisRowHeight, margin + tableWidth, y + thisRowHeight);
+    y += thisRowHeight;
   });
 
   return y;
 };
 
-export const generateInvoicePDF = (
-  invoice: Invoice & { customers?: Customer, vehicles?: Vehicle, invoice_items?: InvoiceItem[] }
+// Recreates the "Classic Corporate Design" invoice document (see the BILL TO /
+// VEHICLE / INVOICE # layout in app/(dashboard)/invoices/[id]/page.tsx) as a PDF.
+export const generateInvoicePDF = async (
+  invoice: Invoice & { customers?: Customer, invoice_items?: InvoiceItem[] }
 ) => {
   const doc = new jsPDF() as any;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
+  const contentWidth = pageWidth - margin * 2;
+  let y = 24;
 
-  // Header
-  doc.setFontSize(22);
-  doc.setTextColor(15, 23, 42); // slate-900
-  doc.text("DRIVERBALANCE", margin, 25);
-  doc.setFontSize(10);
-  doc.setTextColor(37, 99, 235); // blue-600
-  doc.text("AUTO SERVICE & MAINTENANCE", margin, 31);
+  const ensureSpace = (needed: number) => {
+    if (y + needed > pageHeight - margin - 10) {
+      doc.addPage();
+      y = 24;
+    }
+  };
 
-  // Invoice Label
-  doc.setFontSize(30);
-  doc.setTextColor(241, 245, 249); // slate-100
-  doc.text("INVOICE", 140, 30);
+  const loadImageDataUrl = (src: string): Promise<string | null> =>
+    fetch(src)
+      .then((res) => res.blob())
+      .then(
+        (blob) =>
+          new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          })
+      )
+      .catch(() => null);
 
-  // Business Info
-  doc.setFontSize(10);
-  doc.setTextColor(100, 116, 139); // slate-500
-  doc.text("Abu Dhabi, UAE", margin, 45);
-  doc.text("support@drivermade.co", margin, 50);
+  const [sixthGearLogo, dmLogo, signature] = await Promise.all([
+    loadImageDataUrl("/sixth-gear-logo.png"),
+    loadImageDataUrl("/dm.png"),
+    loadImageDataUrl("/sign.png"),
+  ]);
 
-  // Invoice Details
-  doc.setTextColor(15, 23, 42);
-  doc.setFontSize(10);
-  doc.text(`Invoice #: ${invoice.invoice_number}`, 140, 45);
-  doc.text(`Date: ${formatDate(invoice.issue_date)}`, 140, 50);
-  doc.text(`Status: ${invoice.status.toUpperCase()}`, 140, 55);
-
-  // Customer Info
-  doc.setFontSize(12);
-  doc.text("BILL TO:", margin, 70);
-  doc.setFontSize(10);
+  // ===== Branding row — Sixth Gear Garage (left) / DriverMade logo (right) =====
+  // Text x-position is derived from the logo's own width (plus a fixed gap) so the
+  // name/subtitle never sit under the logo, however large or small it is drawn.
+  const sgLogoSize = 16;
+  const brandTextX = margin + sgLogoSize + 6;
+  if (sixthGearLogo) doc.addImage(sixthGearLogo, "PNG", margin, y - 7, sgLogoSize, sgLogoSize);
+  doc.setFontSize(14);
   doc.setFont("helvetica", "bold");
-  doc.text(invoice.customers?.name || "N/A", margin, 76);
-  doc.setFont("helvetica", "normal");
-  doc.text(invoice.customers?.phone || "", margin, 81);
-
-  // Vehicle Info
-  doc.setFontSize(12);
-  doc.text("VEHICLE:", 110, 70);
-  doc.setFontSize(10);
+  doc.setTextColor(13, 13, 13);
+  doc.text("Sixth Gear Garage", brandTextX, y - 2);
+  doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
-  doc.text(invoice.vehicles ? `${invoice.vehicles.year} ${invoice.vehicles.make} ${invoice.vehicles.model}` : "N/A", 110, 76);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Plate: ${invoice.vehicles?.license_plate || "N/A"}`, 110, 81);
-  doc.text(`VIN: ${invoice.vehicles?.vin || "N/A"}`, 110, 86);
+  doc.setTextColor(107, 114, 128);
+  doc.text("ABU DHABI, UAE", brandTextX, y + 3.5);
 
-  // Table
-  const tableData = invoice.invoice_items?.map((item, i) => [
+  if (dmLogo) {
+    const dmHeight = 25;
+    const dmWidth = dmHeight * (1280 / 1804);
+    doc.addImage(dmLogo, "PNG", pageWidth - margin - dmWidth, y - 9, dmWidth, dmHeight);
+  }
+
+  y += 17;
+
+  // ===== TRN =====
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 24, 39);
+  doc.text("TRN: 100234567800003", margin, y);
+
+  y += 11;
+
+  // ===== Three-column info section: BILL TO / VEHICLE / INVOICE DETAILS =====
+  const colWidth = contentWidth / 3;
+  const col1X = margin;
+  const col2X = margin + colWidth + 4;
+  const col3Right = pageWidth - margin;
+  const infoTop = y;
+
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 24, 39);
+  doc.text("BILL TO", col1X, y);
+  doc.setFontSize(9.5);
+  doc.text(invoice.customers?.name || "N/A", col1X, y + 5.5);
+  doc.setFontSize(7.5);
+  doc.setFont("helvetica", "normal");
+  doc.text(invoice.customers?.phone || "", col1X, y + 9.5);
+  doc.text(invoice.customers?.address || "Abu Dhabi, UAE", col1X, y + 13.5);
+
+  if (invoice.car_make || invoice.car_model || invoice.car_year || invoice.license_plate) {
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(17, 24, 39);
+    doc.text("VEHICLE", col2X, y);
+    let vy = y + 5.5;
+    if (invoice.car_make || invoice.car_model || invoice.car_year) {
+      doc.setFontSize(9.5);
+      doc.text(
+        `${invoice.car_year || ""} ${invoice.car_make || ""} ${invoice.car_model || ""}`.replace(/\s+/g, " ").trim(),
+        col2X,
+        vy
+      );
+      vy += 4;
+    }
+    if (invoice.license_plate) {
+      doc.setFontSize(7.5);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Plate: ${invoice.license_plate}`, col2X, vy + 3.5);
+    }
+  }
+
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 24, 39);
+  const labelX = col3Right - 26;
+  doc.text("INVOICE #", labelX, y, { align: "right" });
+  doc.text("DATE ISSUED", labelX, y + 5, { align: "right" });
+  doc.text("DUE DATE", labelX, y + 10, { align: "right" });
+  doc.setFont("helvetica", "normal");
+  doc.text(invoice.invoice_number, col3Right, y, { align: "right" });
+  doc.text(formatDate(invoice.issue_date), col3Right, y + 5, { align: "right" });
+  doc.text("Upon receipt", col3Right, y + 10, { align: "right" });
+
+  y = infoTop + 24;
+
+  // ===== Items table — dark header row =====
+  const tableData = (invoice.invoice_items || []).map((item, i) => [
     i + 1,
     item.description,
     item.quantity,
     formatCurrency(item.unit_price),
     formatCurrency(item.total)
-  ]) || [];
+  ]);
 
-  const tableWidth = 210 - margin * 2;
-  const finalY = drawSimpleTable(
+  y = drawSimpleTable(
     doc,
-    100,
+    y,
     margin,
-    tableWidth,
-    ["#", "Description", "Qty", "Price", "Total"],
+    contentWidth,
+    ["SR.NO", "DESCRIPTION", "QTY", "UNIT PRICE", "AMOUNT"],
     tableData,
-    [15, 55, 30, 35, 35],
+    [contentWidth * 0.06, contentWidth * 0.62, contentWidth * 0.06, contentWidth * 0.13, contentWidth * 0.13],
     {
       align: ["left", "left", "right", "right", "right"],
-      headFill: [37, 99, 235],
-      rowFill: (i) => (i % 2 === 1 ? ([248, 250, 252] as RGB) : null),
+      headFill: [17, 24, 39],
+      wrapColumn: 1,
     }
-  ) + 10;
+  ) + 12;
 
-  // Totals
-  doc.setFontSize(10);
-  doc.text("Subtotal:", 140, finalY);
-  doc.text(formatCurrency(invoice.subtotal), 180, finalY, { align: "right" });
-  
-  doc.text(`VAT (${invoice.tax_rate}%):`, 140, finalY + 7);
-  doc.text(formatCurrency(invoice.tax_amount), 180, finalY + 7, { align: "right" });
+  // ===== Totals (right) + "Thank you" (left) =====
+  ensureSpace(50);
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(107, 114, 128);
+  doc.text("Thank you for your business!", margin, y + 14);
 
-  doc.setFontSize(14);
+  const totalsLabelX = pageWidth - margin - 34;
+  const totalsValueX = pageWidth - margin;
+  let ty = y;
+
+  const totalsRow = (label: string, value: string, valueColor: RGB = [17, 24, 39], labelColor: RGB = [107, 114, 128]) => {
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(labelColor[0], labelColor[1], labelColor[2]);
+    doc.text(label, totalsLabelX, ty, { align: "right" });
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(valueColor[0], valueColor[1], valueColor[2]);
+    doc.text(value, totalsValueX, ty, { align: "right" });
+    ty += 5.5;
+  };
+
+  totalsRow("SUBTOTAL", formatCurrency(invoice.subtotal));
+  totalsRow("TAX RATE", "5%");
+  totalsRow("TAX", formatCurrency(invoice.tax_amount));
+  if (invoice.discount > 0) {
+    totalsRow("DISCOUNT", `-${formatCurrency(invoice.discount)}`, [220, 38, 38], [220, 38, 38]);
+  }
+
+  // TOTAL row — purple filled background, matching the on-page highlight
+  const totalBoxWidth = 46;
+  doc.setFillColor(168, 85, 247);
+  doc.rect(totalsValueX - totalBoxWidth, ty - 4, totalBoxWidth, 7, "F");
+  doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
-  doc.text("Total Amount:", 140, finalY + 17);
-  doc.text(formatCurrency(invoice.total), 180, finalY + 17, { align: "right" });
+  doc.setTextColor(17, 24, 39);
+  doc.text("TOTAL", totalsLabelX, ty, { align: "right" });
+  doc.setTextColor(255, 255, 255);
+  doc.text(formatCurrency(invoice.total), totalsValueX - 3, ty, { align: "right" });
 
-  // Footer
+  y = ty + 20;
+
+  // ===== Signature block =====
+  ensureSpace(36);
+  const sigRight = pageWidth - margin;
+  const sigWidth = 32;
+  if (signature) {
+    const sigHeight = sigWidth * (370 / 675);
+    doc.addImage(signature, "PNG", sigRight - sigWidth, y - sigHeight, sigWidth, sigHeight);
+  }
+  doc.setDrawColor(168, 85, 247);
+  doc.setLineWidth(0.6);
+  doc.line(sigRight - sigWidth, y + 2, sigRight, y + 2);
+  doc.setFontSize(6.5);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 24, 39);
+  doc.text("AUTHORIZED SIGNATURE", sigRight - sigWidth / 2, y + 6, { align: "center" });
+
+  y += 18;
+
+  // ===== Terms & Conditions =====
+  ensureSpace(46);
+  doc.setDrawColor(34, 34, 34);
+  doc.setLineWidth(0.3);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 6;
   doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 24, 39);
+  doc.text("TERMS & CONDITIONS", margin, y);
+  y += 5;
+  doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
-  doc.setTextColor(148, 163, 184);
-  doc.text("Thank you for choosing DriverMade! We appreciate your business.", 105, 280, { align: "center" });
+  doc.setTextColor(31, 41, 55);
+  [
+    "Please make bank transfers payable to:",
+    "SIXTH GEAR AUTO WORKSHOP LLC SPC",
+    "Bank Name: ABU DHABI COMMERCIAL BANK",
+    "Account Number: 14387056920001",
+    "IBAN: AE850030014387056920001",
+    "SWIFT/BIC: ADCBAEAAXXX",
+    `Reference: ${invoice.invoice_number}`,
+  ].forEach((line) => {
+    doc.text(line, margin, y);
+    y += 4;
+  });
+
+  // ===== Top purple/dark bar + bottom black bar on every page =====
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFillColor(168, 85, 247);
+    doc.rect(0, 0, pageWidth, 3, "F");
+    doc.setFillColor(17, 24, 39);
+    doc.rect(0, 3, pageWidth, 3, "F");
+    doc.setFillColor(0, 0, 0);
+    doc.rect(0, pageHeight - 4, pageWidth, 4, "F");
+  }
 
   doc.save(`${invoice.invoice_number}.pdf`);
 };
