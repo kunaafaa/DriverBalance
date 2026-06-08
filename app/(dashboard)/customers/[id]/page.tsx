@@ -117,6 +117,46 @@ export default function CustomerProfilePage() {
         </div>
       </div>
 
+      {/* Lifetime Value Stats */}
+      {(() => {
+        const paidInvoices = invoices.filter(i => i.status === "paid");
+        const totalSpent = paidInvoices.reduce((acc, i) => acc + i.total, 0);
+        const paidCount = paidInvoices.length;
+        const lastVisitDate = paidCount > 0
+          ? [...paidInvoices].sort((a, b) => new Date(b.issue_date).getTime() - new Date(a.issue_date).getTime())[0].issue_date
+          : null;
+        const avgInvoice = paidCount > 0 ? totalSpent / paidCount : 0;
+
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-[#0D0D0D] p-6 rounded-[30px] border border-[#1A1A1A] shadow-sm">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Spent</p>
+              <p className="text-2xl font-black text-[#A855F7] mt-3">{formatCurrency(totalSpent)}</p>
+              <p className="text-xs font-bold text-gray-500 mt-1">from paid invoices</p>
+            </div>
+            <div className="bg-[#0D0D0D] p-6 rounded-[30px] border border-[#1A1A1A] shadow-sm">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Total Invoices</p>
+              <p className="text-2xl font-black text-[#A855F7] mt-3">{invoices.length}</p>
+              <p className="text-xs font-bold text-gray-500 mt-1">{paidCount} paid</p>
+            </div>
+            <div className="bg-[#0D0D0D] p-6 rounded-[30px] border border-[#1A1A1A] shadow-sm">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Last Visit</p>
+              <p className="text-2xl font-black text-[#A855F7] mt-3 truncate">
+                {lastVisitDate ? formatDate(lastVisitDate) : "—"}
+              </p>
+              <p className="text-xs font-bold text-gray-500 mt-1">
+                {lastVisitDate ? "most recent paid invoice" : "No visits yet"}
+              </p>
+            </div>
+            <div className="bg-[#0D0D0D] p-6 rounded-[30px] border border-[#1A1A1A] shadow-sm">
+              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none">Avg. Invoice</p>
+              <p className="text-2xl font-black text-[#A855F7] mt-3">{formatCurrency(avgInvoice)}</p>
+              <p className="text-xs font-bold text-gray-500 mt-1">per paid invoice</p>
+            </div>
+          </div>
+        );
+      })()}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Contact info Sidebar */}
         <div className="space-y-6">

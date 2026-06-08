@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const status = searchParams.get("status");
   const customerId = searchParams.get("customer_id");
+  const licensePlate = searchParams.get("license_plate");
 
   // Related-record lookups (customer profile) need the full unpaginated set
   // and a plain array response — keep that shape.
@@ -25,6 +26,26 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Supabase Error (Invoices):", error);
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json(data);
+  }
+
+  // Vehicle profile page: match invoices by license plate (invoices have no vehicle_id FK).
+  // Include invoice_items so the timeline can show the first item description.
+  if (licensePlate) {
+    const VEHICLE_INVOICE_COLUMNS =
+      "id, invoice_number, issue_date, due_date, total, status, customer_id, created_at, license_plate, customers(name), invoice_items(description, item_type)";
+
+    const { data, error } = await supabase
+      .from("invoices")
+      .select(VEHICLE_INVOICE_COLUMNS)
+      .ilike("license_plate", licensePlate)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Supabase Error (Invoices by plate):", error);
       return NextResponse.json({ error: error.message }, { status: 400 });
     }
 

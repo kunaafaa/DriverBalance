@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   const to = searchParams.get("to");
   const status = searchParams.get("status");
   const customerId = searchParams.get("customer_id");
+  const vehicleId = searchParams.get("vehicle_id");
 
   let query = supabase.from("appointments").select("*, customers(*), vehicles(*), appointment_services(*, service_types(*))");
 
@@ -19,6 +20,7 @@ export async function GET(request: NextRequest) {
   if (to) query = query.lte("scheduled_date", to);
   if (status) query = query.eq("status", status);
   if (customerId) query = query.eq("customer_id", customerId);
+  if (vehicleId) query = query.eq("vehicle_id", vehicleId);
 
   const { data, error } = await query.order("scheduled_date", { ascending: true });
 
