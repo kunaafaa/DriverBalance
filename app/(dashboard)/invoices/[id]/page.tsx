@@ -10,6 +10,7 @@ import {
   Printer,
   ChevronLeft,
   Mail,
+  MessageCircle,
   CreditCard,
   CheckCircle2,
   AlertCircle,
@@ -68,6 +69,66 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const handleSendWhatsApp = () => {
+    if (!invoice) return;
+
+    const customerName = invoice.customers?.name || "N/A";
+    const customerPhone = invoice.customers?.phone || "";
+    const vehicleLine = [invoice.car_year, invoice.car_make, invoice.car_model].filter(Boolean).join(" ") || "N/A";
+    const plate = invoice.license_plate || "N/A";
+    const paymentMethod = (invoice.payment_method || "pending")
+      .replace("_", " ")
+      .replace(/\b\w/g, (char) => char.toUpperCase());
+    const status = invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1);
+
+    const lineItems = (invoice.invoice_items || [])
+      .map((item) => `- ${item.description}   Qty: ${item.quantity}   ${formatCurrency(item.unit_price)}`)
+      .join("\n");
+
+    const message = `DRIVERMADE
+Precision Repair · Performance Engineering
+Musaffah, Abu Dhabi, UAE
+
+------------------------------
+INVOICE: ${invoice.invoice_number}
+Date: ${formatDate(invoice.issue_date)}
+------------------------------
+
+Customer: ${customerName}
+Phone: ${customerPhone}
+
+Vehicle: ${vehicleLine}
+Plate: ${plate}
+
+------------------------------
+SERVICES & PARTS
+------------------------------
+${lineItems}
+
+------------------------------
+Subtotal:     ${formatCurrency(invoice.subtotal)}
+VAT (5%):     ${formatCurrency(invoice.tax_amount)}
+TOTAL:        ${formatCurrency(invoice.total)}
+------------------------------
+
+Payment Method: ${paymentMethod}
+Status: ${status}
+
+Thank you for choosing DriverMade.
+For any queries please contact us directly.
+
+This is an official invoice issued by DriverMade Automotive Services, Musaffah, Abu Dhabi, UAE.
+------------------------------`;
+
+    let phoneDigits = customerPhone.replace(/\D/g, "");
+    if (phoneDigits.startsWith("0")) {
+      phoneDigits = `971${phoneDigits.slice(1)}`;
+    }
+
+    const encodedMessage = encodeURIComponent(message);
+    window.open(`https://wa.me/${phoneDigits}?text=${encodedMessage}`, "_blank");
+  };
+
   if (loading) return (
     <div className="flex flex-col items-center justify-center h-[60vh]">
       <div className="w-12 h-12 border-4 border-[#A855F7] border-t-transparent rounded-full animate-spin"></div>
@@ -102,6 +163,14 @@ export default function InvoiceDetailPage() {
           >
             <Download className="w-4 h-4 mr-2 text-[#A855F7]" />
             PDF
+          </button>
+
+          <button
+            onClick={handleSendWhatsApp}
+            className="px-4 py-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-sm shadow-sm hover:shadow-md transition-all flex items-center hover:bg-[#111111]"
+          >
+            <MessageCircle className="w-4 h-4 mr-2 text-[#A855F7]" />
+            Send via WhatsApp
           </button>
 
           <Link
