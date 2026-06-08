@@ -13,6 +13,7 @@ import {
   CheckCircle2,
   XCircle,
   Car,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 import { formatCurrency, formatDate } from "@/lib/utils/formatting";
@@ -30,6 +31,7 @@ export default function QuotationDetailPage() {
   const router = useRouter();
   const [quotation, setQuotation] = useState<(Quotation & { quotation_items: QuotationItem[] }) | null>(null);
   const [loading, setLoading] = useState(true);
+  const [converting, setConverting] = useState(false);
 
   useEffect(() => {
     if (!id) { setLoading(false); return; }
@@ -60,6 +62,18 @@ export default function QuotationDetailPage() {
     } catch { alert("Failed to update status"); }
   };
 
+  const handleConvert = async () => {
+    if (!window.confirm("Convert this quotation to an invoice? This will create a new invoice with all items from this quotation.")) return;
+    setConverting(true);
+    try {
+      const { data } = await axios.post(`/api/quotations/${id}/convert`);
+      router.push(`/invoices/${data.id}`);
+    } catch (error: any) {
+      alert(`Failed to convert: ${error.response?.data?.error || error.message}`);
+      setConverting(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!window.confirm("Delete this quotation permanently?")) return;
     try {
@@ -82,7 +96,7 @@ export default function QuotationDetailPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       {/* Action Bar */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 print:hidden">
+      <div className="flex flex-col gap-2 print:hidden max-w-[800px] mx-auto w-full">
         <Link
           href="/quotations"
           className="inline-flex items-center text-gray-400 hover:text-white font-bold text-sm transition-all"
@@ -90,49 +104,59 @@ export default function QuotationDetailPage() {
           <ChevronLeft className="w-4 h-4 mr-1" />
           Back to list
         </Link>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-nowrap gap-2 overflow-x-auto">
           <button
             onClick={() => window.print()}
-            className="px-4 py-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-sm flex items-center hover:bg-[#111111] transition-all"
+            className="px-3 py-1.5 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-xs shadow-sm hover:shadow-md transition-all flex items-center hover:bg-[#111111] whitespace-nowrap"
           >
-            <Printer className="w-4 h-4 mr-2 text-[#A855F7]" />
+            <Printer className="w-3.5 h-3.5 mr-1.5 text-[#A855F7]" />
             Print
           </button>
           <button
             onClick={() => window.print()}
-            className="px-4 py-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-sm flex items-center hover:bg-[#111111] transition-all"
+            className="px-3 py-1.5 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-xs shadow-sm hover:shadow-md transition-all flex items-center hover:bg-[#111111] whitespace-nowrap"
           >
-            <Download className="w-4 h-4 mr-2 text-[#A855F7]" />
+            <Download className="w-3.5 h-3.5 mr-1.5 text-[#A855F7]" />
             PDF
           </button>
           <Link
             href={`/quotations/${id}/edit`}
-            className="px-4 py-2 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-sm flex items-center hover:bg-[#111111] transition-all"
+            className="px-3 py-1.5 bg-[#0D0D0D] border border-[#1A1A1A] rounded-xl text-gray-200 font-bold text-xs shadow-sm hover:shadow-md transition-all flex items-center hover:bg-[#111111] whitespace-nowrap"
           >
-            <ClipboardList className="w-4 h-4 mr-2 text-[#A855F7]" />
+            <ClipboardList className="w-3.5 h-3.5 mr-1.5 text-[#A855F7]" />
             Edit
           </Link>
           <button
             onClick={handleDelete}
-            className="px-4 py-2 bg-[#0D0D0D] border border-red-100 rounded-xl text-red-600 font-bold text-sm flex items-center hover:bg-red-50 transition-all"
+            className="px-3 py-1.5 bg-[#0D0D0D] border border-red-100 rounded-xl text-red-600 font-bold text-xs shadow-sm hover:bg-red-50 hover:shadow-md transition-all flex items-center whitespace-nowrap"
           >
-            <Trash2 className="w-4 h-4 mr-2" />
+            <Trash2 className="w-3.5 h-3.5 mr-1.5" />
             Delete
           </button>
+          {["draft", "sent", "accepted"].includes(quotation.status?.toLowerCase()) && (
+            <button
+              onClick={handleConvert}
+              disabled={converting}
+              className="px-3 py-1.5 bg-[#0D0D0D] border border-[#A855F7] rounded-xl text-[#A855F7] font-bold text-xs shadow-sm hover:shadow-md transition-all flex items-center hover:bg-[#A855F7]/10 disabled:opacity-60 whitespace-nowrap"
+            >
+              <FileText className="w-3.5 h-3.5 mr-1.5" />
+              {converting ? "Converting..." : "Convert to Invoice"}
+            </button>
+          )}
           {(quotation.status === "draft" || quotation.status === "sent") && (
             <>
               <button
                 onClick={handleMarkAccepted}
-                className="px-6 py-2 bg-green-600 text-white font-black text-sm rounded-xl hover:bg-green-700 transition-all flex items-center"
+                className="px-3 py-1.5 bg-[#0D0D0D] border border-green-700 rounded-xl text-green-400 font-bold text-xs shadow-sm hover:shadow-md transition-all flex items-center hover:bg-green-900/20 whitespace-nowrap"
               >
-                <CheckCircle2 className="w-4 h-4 mr-2" />
+                <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" />
                 Mark Accepted
               </button>
               <button
                 onClick={handleMarkRejected}
-                className="px-6 py-2 bg-red-600 text-white font-black text-sm rounded-xl hover:bg-red-700 transition-all flex items-center"
+                className="px-3 py-1.5 bg-[#0D0D0D] border border-red-800 rounded-xl text-red-500 font-bold text-xs shadow-sm hover:shadow-md transition-all flex items-center hover:bg-red-900/20 whitespace-nowrap"
               >
-                <XCircle className="w-4 h-4 mr-2" />
+                <XCircle className="w-3.5 h-3.5 mr-1.5" />
                 Mark Rejected
               </button>
             </>
