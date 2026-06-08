@@ -1,11 +1,13 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useForm, useFieldArray, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { quotationSchema } from "@/lib/utils/validation";
 import { z } from "zod";
-import { Quotation, ItemType } from "@/lib/types";
-import { Plus, Trash2, Calculator, Calendar, Car, FileText } from "lucide-react";
+import { Customer, Vehicle, Quotation, ItemType } from "@/lib/types";
+import { Plus, Trash2, Calculator, Calendar, Car, FileText, User } from "lucide-react";
+import axios from "axios";
 
 type QuotationFormData = z.infer<typeof quotationSchema>;
 
@@ -16,10 +18,18 @@ interface QuotationFormProps {
 }
 
 export default function QuotationForm({ initialData, onSubmit, onCancel }: QuotationFormProps) {
+  const [customerQuery, setCustomerQuery] = useState(initialData?.customer_name || "");
+  const [customerResults, setCustomerResults] = useState<Customer[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [vehicleOptions, setVehicleOptions] = useState<Vehicle[]>([]);
+  const [loadingVehicle, setLoadingVehicle] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const {
     register,
     control,
     handleSubmit,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<QuotationFormData>({
     resolver: zodResolver(quotationSchema) as any,
@@ -48,6 +58,79 @@ export default function QuotationForm({ initialData, onSubmit, onCancel }: Quota
   const subtotal = watchedItems.reduce((acc, item) => acc + (item.quantity * item.unit_price || 0), 0);
   const taxAmount = (subtotal * (watchedTaxRate || 0)) / 100;
   const total = subtotal + taxAmount - (watchedDiscount || 0);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const searchCustomers = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setCustomerResults([]);
+      setShowDropdown(false);
+      return;
+    }
+    try {
+      const { data } = await axios.get(`/api/customers?search=${encodeURIComponent(query)}`);
+      setCustomerResults(data.data || []);
+      setShowDropdown(true);
+    } catch {
+      setCustomerResults([]);
+    }
+  };
+
+  const fetchVehiclesForCustomer = async (customerId: string) => {
+    setLoadingVehicle(true);
+    try {
+      const { data } = await axios.get(`/api/vehicles?customer_id=${customerId}`);
+      const vehicles = data as Vehicle[];
+      if (vehicles.length === 1) {
+        setVehicleOptions([]);
+        setValue("car_make", vehicles[0].make);
+        setValue("car_model", vehicles[0].model);
+        setValue("car_year", vehicles[0].year);
+        setValue("license_plate", vehicles[0].license_plate);
+      } else if (vehicles.length > 1) {
+        setVehicleOptions(vehicles);
+        setValue("car_make", "");
+        setValue("car_model", "");
+        setValue("car_year", undefined as any);
+        setValue("license_plate", "");
+      } else {
+        setVehicleOptions([]);
+      }
+    } catch {
+      setVehicleOptions([]);
+    } finally {
+      setLoadingVehicle(false);
+    }
+  };
+
+  const handleCustomerSelect = (customer: Customer) => {
+    setCustomerQuery(customer.name);
+    setValue("customer_name", customer.name, { shouldValidate: true });
+    setValue("customer_phone", customer.phone, { shouldValidate: true });
+    setShowDropdown(false);
+    setCustomerResults([]);
+    fetchVehiclesForCustomer(customer.id);
+  };
+
+  const handleVehicleOptionSelect = (vehicleId: string) => {
+    const v = vehicleOptions.find((veh) => veh.id === vehicleId);
+    if (!v) return;
+    setValue("car_make", v.make);
+    setValue("car_model", v.model);
+    setValue("car_year", v.year);
+    setValue("license_plate", v.license_plate);
+  };
+
+  const customerNameReg = register("customer_name");
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -90,12 +173,94 @@ export default function QuotationForm({ initialData, onSubmit, onCancel }: Quota
         </div>
       </div>
 
+      {/* Customer Info */}
+      <div className="p-6 bg-[#111111] rounded-3xl border border-[#1A1A1A] space-y-4">
+        <h3 className="flex items-center text-sm font-black text-white uppercase tracking-tight">
+          <User className="w-4 h-4 mr-2 text-[#A855F7]" />
+          Customer
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Customer Name with autocomplete */}
+          <div className="space-y-2 relative" ref={dropdownRef}>
+            <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Customer Name</label>
+            <input
+              ref={customerNameReg.ref}
+              name={customerNameReg.name}
+              onBlur={customerNameReg.onBlur}
+              value={customerQuery}
+              onChange={(e) => {
+                const val = e.target.value;
+                setCustomerQuery(val);
+                setValue("customer_name", val, { shouldValidate: true });
+                searchCustomers(val);
+                if (!val) setVehicleOptions([]);
+              }}
+              placeholder="e.g. Ahmed Al Mansouri"
+              autoComplete="off"
+              className="w-full bg-[#0D0D0D] px-4 py-2 rounded-xl border border-[#1A1A1A] font-bold text-white outline-none focus:ring-2 focus:ring-[#A855F7]"
+            />
+            {showDropdown && customerResults.length > 0 && (
+              <div className="absolute z-50 top-full mt-1 left-0 right-0 bg-[#111111] border border-[#1A1A1A] rounded-xl overflow-hidden shadow-xl">
+                {customerResults.map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => handleCustomerSelect(c)}
+                    className="w-full px-4 py-2.5 text-left hover:bg-[#1A1A1A] transition-all border-b border-[#1A1A1A] last:border-0"
+                  >
+                    <p className="text-sm font-bold text-white">{c.name}</p>
+                    <p className="text-xs text-gray-500">{c.phone}</p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Customer Phone */}
+          <div className="space-y-2">
+            <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Customer Phone</label>
+            <input
+              {...register("customer_phone")}
+              placeholder="e.g. 050 123 4567"
+              className="w-full bg-[#0D0D0D] px-4 py-2 rounded-xl border border-[#1A1A1A] font-bold text-white outline-none focus:ring-2 focus:ring-[#A855F7]"
+            />
+          </div>
+        </div>
+      </div>
+
       {/* Vehicle Info */}
       <div className="p-6 bg-[#111111] rounded-3xl border border-[#1A1A1A] space-y-4">
         <h3 className="flex items-center text-sm font-black text-white uppercase tracking-tight">
           <Car className="w-4 h-4 mr-2 text-[#A855F7]" />
           Vehicle Details
         </h3>
+
+        {loadingVehicle && (
+          <p className="text-xs text-gray-500 font-bold animate-pulse">Fetching vehicle info...</p>
+        )}
+
+        {!loadingVehicle && vehicleOptions.length > 1 && (
+          <div className="space-y-2">
+            <label className="flex items-center text-xs font-black text-gray-400 uppercase tracking-widest">
+              <Car className="w-3 h-3 mr-2 text-[#A855F7]" />
+              Select Vehicle
+            </label>
+            <select
+              onChange={(e) => handleVehicleOptionSelect(e.target.value)}
+              defaultValue=""
+              className="w-full bg-[#0D0D0D] px-4 py-2 rounded-xl border border-[#1A1A1A] font-bold text-white outline-none focus:ring-2 focus:ring-[#A855F7]"
+            >
+              <option value="">Select a vehicle...</option>
+              {vehicleOptions.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.year} {v.make} {v.model} — Plate: {v.license_plate}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="space-y-2">
             <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Car Make</label>
@@ -136,26 +301,6 @@ export default function QuotationForm({ initialData, onSubmit, onCancel }: Quota
               className="w-full bg-[#0D0D0D] px-4 py-2 rounded-xl border border-[#1A1A1A] font-bold text-white outline-none focus:ring-2 focus:ring-[#A855F7]"
             />
             {errors.license_plate && <p className="text-red-500 text-[10px] font-bold">{errors.license_plate.message}</p>}
-          </div>
-        </div>
-
-        {/* Optional customer contact */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2 border-t border-[#1A1A1A]">
-          <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Customer Name (Optional)</label>
-            <input
-              {...register("customer_name")}
-              placeholder="e.g. Ahmed Al Mansouri"
-              className="w-full bg-[#0D0D0D] px-4 py-2 rounded-xl border border-[#1A1A1A] font-bold text-white outline-none focus:ring-2 focus:ring-[#A855F7]"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-black text-gray-400 uppercase tracking-widest">Customer Phone (Optional)</label>
-            <input
-              {...register("customer_phone")}
-              placeholder="e.g. 050 123 4567"
-              className="w-full bg-[#0D0D0D] px-4 py-2 rounded-xl border border-[#1A1A1A] font-bold text-white outline-none focus:ring-2 focus:ring-[#A855F7]"
-            />
           </div>
         </div>
       </div>

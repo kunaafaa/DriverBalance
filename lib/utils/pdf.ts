@@ -184,11 +184,13 @@ export const generateInvoicePDF = async (
   doc.setTextColor(17, 24, 39);
   doc.text("BILL TO", col1X, y);
   doc.setFontSize(9.5);
-  doc.text(invoice.customers?.name || "N/A", col1X, y + 5.5);
+  const nameLines = doc.splitTextToSize(invoice.customers?.name || "N/A", colWidth - 4);
+  doc.text(nameLines, col1X, y + 5.5);
+  const nameOffset = (nameLines.length - 1) * 4.5;
   doc.setFontSize(7.5);
   doc.setFont("helvetica", "normal");
-  doc.text(invoice.customers?.phone || "", col1X, y + 9.5);
-  doc.text(invoice.customers?.address || "Abu Dhabi, UAE", col1X, y + 13.5);
+  doc.text(invoice.customers?.phone || "", col1X, y + 9.5 + nameOffset);
+  doc.text(invoice.customers?.address || "Abu Dhabi, UAE", col1X, y + 13.5 + nameOffset);
 
   if (invoice.car_make || invoice.car_model || invoice.car_year || invoice.license_plate) {
     doc.setFontSize(7);
