@@ -2,38 +2,27 @@
 
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { 
-  TrendingUp, 
-  Users, 
-  Car, 
-  Calendar, 
-  DollarSign, 
-  ArrowUpRight, 
+import {
+  TrendingUp,
+  Users,
+  Car,
+  Calendar,
+  DollarSign,
+  ArrowUpRight,
   ArrowDownRight,
   Clock
 } from "lucide-react";
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   AreaChart,
   Area
 } from "recharts";
 import { formatCurrency } from "@/lib/utils/formatting";
 import Link from "next/link";
-
-const data = [
-  { name: "Jan", revenue: 4000 },
-  { name: "Feb", revenue: 3000 },
-  { name: "Mar", revenue: 5000 },
-  { name: "Apr", revenue: 4500 },
-  { name: "May", revenue: 6000 },
-  { name: "Jun", revenue: 5500 },
-];
 
 export default function DashboardPage() {
   const [data, setData] = useState<any>(null);
@@ -74,8 +63,8 @@ export default function DashboardPage() {
       </div>
       <h3 className="text-xl font-bold text-white mb-2">Sync Error</h3>
       <p className="text-gray-400 max-w-md">{error}</p>
-      <button 
-        onClick={() => setTimeRange(timeRange)} // Re-trigger effect
+      <button
+        onClick={() => setTimeRange(timeRange)}
         className="mt-6 px-6 py-2 bg-[#A855F7] text-white rounded-xl font-bold hover:bg-[#9333EA] transition-all"
       >
         Retry Sync
@@ -83,16 +72,17 @@ export default function DashboardPage() {
     </div>
   );
 
-  const stats = data?.stats || { customers: 0, vehicles: 0, appointments: 0, revenue: 0 };
+  const stats = data?.stats || { customers: 0, vehicles: 0, appointments: 0, revenue: 0, expenses: 0, netProfit: 0, margin: 0 };
   const chartData = data?.chartData || [];
   const activity = data?.activity || [];
+  const netPositive = (stats.netProfit ?? 0) >= 0;
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-white">Workshop Overview</h1>
-          <p className="text-gray-400 font-medium">Welcome back, Admin. Here's a summary of DriverMade today.</p>
+          <p className="text-gray-400 font-medium">Welcome back, Admin. Here&apos;s a summary of DriverMade today.</p>
         </div>
         <div className="bg-[#0D0D0D] px-4 py-2 rounded-2xl border border-[#1A1A1A] shadow-sm flex items-center space-x-2">
           <Clock className="w-4 h-4 text-white" />
@@ -100,9 +90,36 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Profit & Cash — the headline bookkeeping figures */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-[#0D0D0D] p-6 rounded-3xl border border-[#1A1A1A] shadow-xl shadow-black/50">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-[#A855F7]/10 rounded-2xl"><DollarSign className="w-6 h-6 text-white" /></div>
+          </div>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Revenue (paid)</p>
+          <h3 className="text-2xl font-black text-white mt-1">{formatCurrency(stats.revenue)}</h3>
+        </div>
+        <div className="bg-[#0D0D0D] p-6 rounded-3xl border border-[#1A1A1A] shadow-xl shadow-black/50">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-3 bg-red-500/10 rounded-2xl"><ArrowDownRight className="w-6 h-6 text-red-400" /></div>
+          </div>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Expenses</p>
+          <h3 className="text-2xl font-black text-white mt-1">{formatCurrency(stats.expenses ?? 0)}</h3>
+        </div>
+        <div className="bg-[#0D0D0D] p-6 rounded-3xl border border-[#1A1A1A] shadow-xl shadow-black/50">
+          <div className="flex items-center justify-between mb-4">
+            <div className={`p-3 rounded-2xl ${netPositive ? "bg-green-500/10" : "bg-red-500/10"}`}>
+              {netPositive ? <TrendingUp className="w-6 h-6 text-green-400" /> : <ArrowDownRight className="w-6 h-6 text-red-400" />}
+            </div>
+            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Margin {(stats.margin ?? 0).toFixed(1)}%</span>
+          </div>
+          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Net Profit</p>
+          <h3 className={`text-2xl font-black mt-1 ${netPositive ? "text-green-500" : "text-red-500"}`}>{formatCurrency(stats.netProfit ?? 0)}</h3>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {[
-          { label: "Total Revenue", value: formatCurrency(stats.revenue), icon: DollarSign, trend: "+12.5%" },
           { label: "Total Customers", value: stats.customers, icon: Users, trend: "+4.3%" },
           { label: "Active Vehicles", value: stats.vehicles, icon: Car, trend: "+8.1%" },
           { label: "Appointments", value: stats.appointments, icon: Calendar, trend: "-2.4%" },
@@ -126,8 +143,14 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 bg-[#0D0D0D] p-8 rounded-3xl border border-[#1A1A1A] shadow-xl shadow-black/50">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="text-lg font-black text-white tracking-tight">Revenue Analytics</h3>
-            <select 
+            <div>
+              <h3 className="text-lg font-black text-white tracking-tight">Revenue vs Expenses</h3>
+              <div className="flex items-center gap-4 mt-1">
+                <span className="flex items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest"><span className="w-2.5 h-2.5 rounded-full bg-[#A855F7] mr-1.5" />Revenue</span>
+                <span className="flex items-center text-[10px] font-bold text-gray-400 uppercase tracking-widest"><span className="w-2.5 h-2.5 rounded-full bg-red-400 mr-1.5" />Expenses</span>
+              </div>
+            </div>
+            <select
               value={timeRange}
               onChange={(e) => setTimeRange(e.target.value)}
               className="bg-[#111111] border-none outline-none rounded-xl px-4 py-2 text-xs font-bold text-gray-400 cursor-pointer hover:bg-[#1A1A1A] transition-colors"
@@ -144,30 +167,40 @@ export default function DashboardPage() {
                     <stop offset="5%" stopColor="#A855F7" stopOpacity={0.1}/>
                     <stop offset="95%" stopColor="#A855F7" stopOpacity={0}/>
                   </linearGradient>
+                  <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#F87171" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#F87171" stopOpacity={0}/>
+                  </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1A1A1A" />
-                <XAxis 
-                  dataKey="name" 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fill: '#94A3B8', fontSize: 12, fontWeight: 600}} 
+                <XAxis
+                  dataKey="name"
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{fill: '#94A3B8', fontSize: 12, fontWeight: 600}}
                   dy={10}
                 />
-                <YAxis 
-                  axisLine={false} 
-                  tickLine={false} 
-                  tick={{fill: '#94A3B8', fontSize: 12, fontWeight: 600}} 
+                <YAxis
+                  axisLine={false}
+                  tickLine={false}
+                  tick={{fill: '#94A3B8', fontSize: 12, fontWeight: 600}}
                   tickFormatter={(val) => `AED ${val}`}
                 />
-                <Tooltip 
+                <Tooltip
                   content={({ active, payload, label }) => {
                     if (active && payload && payload.length) {
+                      const rev = payload.find((p) => p.dataKey === "revenue")?.value as number | undefined;
+                      const exp = payload.find((p) => p.dataKey === "expenses")?.value as number | undefined;
                       return (
-                        <div className="bg-[#111111]/90 backdrop-blur-md border border-[#1A1A1A] p-4 rounded-2xl shadow-2xl shadow-black animate-in fade-in zoom-in duration-200">
+                        <div className="bg-[#111111]/90 backdrop-blur-md border border-[#1A1A1A] p-4 rounded-2xl shadow-2xl shadow-black animate-in fade-in zoom-in duration-200 space-y-1">
                           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">{label}</p>
-                          <p className="text-sm font-black text-[#A855F7] flex items-center">
-                            Revenue: 
-                            <span className="text-white ml-2">{formatCurrency(payload[0].value as number)}</span>
+                          <p className="text-sm font-black text-[#A855F7] flex items-center justify-between gap-4">
+                            <span>Revenue</span>
+                            <span className="text-white">{formatCurrency(rev ?? 0)}</span>
+                          </p>
+                          <p className="text-sm font-black text-red-400 flex items-center justify-between gap-4">
+                            <span>Expenses</span>
+                            <span className="text-white">{formatCurrency(exp ?? 0)}</span>
                           </p>
                         </div>
                       );
@@ -175,14 +208,23 @@ export default function DashboardPage() {
                     return null;
                   }}
                 />
-                <Area 
-                  type="monotone" 
-                  dataKey="revenue" 
-                  stroke="#A855F7" 
+                <Area
+                  type="monotone"
+                  dataKey="revenue"
+                  stroke="#A855F7"
                   strokeWidth={4}
-                  fillOpacity={1} 
-                  fill="url(#colorRev)" 
+                  fillOpacity={1}
+                  fill="url(#colorRev)"
                   activeDot={{ r: 6, fill: "#A855F7", stroke: "#FFFFFF", strokeWidth: 2 }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="expenses"
+                  stroke="#F87171"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorExp)"
+                  activeDot={{ r: 5, fill: "#F87171", stroke: "#FFFFFF", strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -213,7 +255,7 @@ export default function DashboardPage() {
               </div>
             )}
           </div>
-          <Link 
+          <Link
             href="/appointments"
             className="block w-full mt-8 py-3 rounded-2xl bg-[#111111] text-gray-400 text-center text-xs font-black uppercase tracking-widest hover:bg-[#1A1A1A] transition-all"
           >

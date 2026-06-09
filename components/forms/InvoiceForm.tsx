@@ -239,7 +239,7 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
         setValue(`items.${rowIdx}.unit_price` as any, item.unit_price);
         setValue(`items.${rowIdx}.item_type` as any, item.item_type);
       } else {
-        append({ description: item.description, quantity: item.quantity, unit_price: item.unit_price, item_type: item.item_type });
+        append({ description: item.description, quantity: item.quantity, unit_price: item.unit_price, cost_price: 0, item_type: item.item_type });
       }
     });
   };
@@ -376,7 +376,7 @@ export default function InvoiceForm({ initialData, onSubmit, onCancel }: Invoice
           <h3 className="text-sm font-black text-white uppercase tracking-tight">Invoice Items</h3>
           <button
             type="button"
-            onClick={() => append({ description: "", quantity: 1, unit_price: 0, item_type: "service" })}
+            onClick={() => append({ description: "", quantity: 1, unit_price: 0, cost_price: 0, item_type: "service" })}
             className="inline-flex items-center px-4 py-2 bg-[#A855F7]/10 text-white text-xs font-bold rounded-xl hover:bg-[#A855F7] hover:text-white transition-all"
           >
             <Plus className="w-4 h-4 mr-2" />

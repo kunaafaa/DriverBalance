@@ -11,7 +11,13 @@ import {
   Package,
   ClipboardList,
   Stethoscope,
-  Settings,
+  Receipt,
+  Truck,
+  CreditCard,
+  BarChart3,
+  PieChart,
+  Clock,
+  FileDown,
   LogOut
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -26,6 +32,15 @@ const menuItems = [
   { name: "Quotations", icon: ClipboardList, href: "/quotations" },
   { name: "Diagnostic Reports", icon: Stethoscope, href: "/diagnostic-reports" },
   { name: "Inventory", icon: Package, href: "/inventory" },
+  { name: "Expenses", icon: Receipt, href: "/expenses" },
+  { name: "Vendors", icon: Truck, href: "/vendors" },
+  { name: "Bills", icon: CreditCard, href: "/bills" },
+];
+
+const reportItems = [
+  { name: "P&L Summary", icon: PieChart, href: "/reports/pnl" },
+  { name: "Money & Flags", icon: Clock, href: "/reports/aging" },
+  { name: "Accountant Export", icon: FileDown, href: "/reports/export" },
 ];
 
 export default function Sidebar() {
@@ -39,6 +54,28 @@ export default function Sidebar() {
 
       <nav className="flex-1 px-4 space-y-1">
         {menuItems.map((item) => {
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex items-center space-x-3 px-4 py-3.5 rounded-2xl transition-all duration-200 group ${isActive
+                ? "bg-[#A855F7] text-white shadow-lg shadow-[#A855F7]/20 shadow-offset-y-2"
+                : "text-gray-400 hover:text-white hover:bg-[#A855F7]/10"
+                }`}
+            >
+              <item.icon className={`w-5 h-5 ${isActive ? "text-white" : "group-hover:text-white"}`} />
+              <span className="font-bold text-sm tracking-tight">{item.name}</span>
+            </Link>
+          );
+        })}
+
+        {/* Reports */}
+        <div className="pt-5 pb-1 px-4 flex items-center gap-2">
+          <BarChart3 className="w-3.5 h-3.5 text-gray-600" />
+          <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Reports</span>
+        </div>
+        {reportItems.map((item) => {
           const isActive = pathname === item.href;
           return (
             <Link

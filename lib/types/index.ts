@@ -5,6 +5,68 @@ export type DiagnosticReportStatus = "draft" | "confirmed" | "verified";
 export type ItemType = "service" | "part" | "labor";
 export type PaymentMethod = "cash" | "card" | "bank_transfer" | "pending";
 
+// Bookkeeping layer
+export type ExpenseCategory =
+  | "rent" | "salaries" | "cogs_parts" | "tools" | "marketing"
+  | "utilities" | "subscriptions" | "bank_fees" | "other";
+export type BillStatus = "unpaid" | "partial" | "paid";
+export type ReceivedPaymentMethod = "cash" | "card" | "bank_transfer";
+
+export interface Expense {
+  id: string;
+  expense_date: string;
+  vendor?: string;
+  category: ExpenseCategory;
+  amount: number;
+  vat_amount: number;
+  payment_method: PaymentMethod;
+  notes?: string;
+  receipt_url?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Vendor {
+  id: string;
+  name: string;
+  contact_person?: string;
+  phone?: string;
+  email?: string;
+  category?: string;
+  payment_terms?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Bill {
+  id: string;
+  vendor_id?: string | null;
+  bill_number?: string;
+  bill_date: string;
+  due_date?: string;
+  category?: string;
+  amount: number;
+  vat_amount: number;
+  amount_paid: number;
+  status: BillStatus;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  // Joins
+  vendors?: Vendor | null;
+}
+
+export interface Payment {
+  id: string;
+  invoice_id: string;
+  amount: number;
+  payment_date: string;
+  method?: ReceivedPaymentMethod;
+  notes?: string;
+  created_at: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -84,6 +146,7 @@ export interface Part {
   quantity_in_stock: number;
   reorder_level: number;
   unit_price: number;
+  cost_price?: number;
   supplier?: string;
   supplier_contact?: string;
   last_restocked?: string;
@@ -135,6 +198,7 @@ export interface InvoiceItem {
   quantity: number;
   unit_price: number;
   total: number;
+  cost_price?: number;
   item_type: ItemType;
   created_at: string;
 }

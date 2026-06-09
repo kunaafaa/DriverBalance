@@ -42,8 +42,53 @@ export const inventorySchema = z.object({
   quantity_in_stock: z.coerce.number().min(0),
   reorder_level: z.coerce.number().min(0).default(5),
   unit_price: z.coerce.number().min(0),
+  cost_price: z.coerce.number().min(0).default(0),
   supplier: z.string().optional().nullable().or(z.literal("")),
   supplier_contact: z.string().optional().nullable().or(z.literal("")),
+});
+
+// ---- Bookkeeping layer ----
+
+export const expenseSchema = z.object({
+  expense_date: z.string().refine((v) => !isNaN(Date.parse(v)), { message: "Invalid date" }),
+  vendor: z.string().optional().nullable().or(z.literal("")),
+  category: z.enum([
+    "rent", "salaries", "cogs_parts", "tools", "marketing",
+    "utilities", "subscriptions", "bank_fees", "other",
+  ]),
+  amount: z.coerce.number().min(0, "Amount required"),
+  vat_amount: z.coerce.number().min(0).default(0),
+  payment_method: z.enum(["cash", "card", "bank_transfer", "pending"]).default("cash"),
+  notes: z.string().optional().nullable().or(z.literal("")),
+  receipt_url: z.string().optional().nullable().or(z.literal("")),
+});
+
+export const vendorSchema = z.object({
+  name: z.string().min(2, "Name required"),
+  contact_person: z.string().optional().nullable().or(z.literal("")),
+  phone: z.string().optional().nullable().or(z.literal("")),
+  email: z.string().email("Invalid email").optional().nullable().or(z.literal("")),
+  category: z.string().optional().nullable().or(z.literal("")),
+  payment_terms: z.string().optional().nullable().or(z.literal("")),
+  notes: z.string().optional().nullable().or(z.literal("")),
+});
+
+export const billSchema = z.object({
+  vendor_id: z.string().uuid("Select a vendor").optional().nullable().or(z.literal("")),
+  bill_number: z.string().optional().nullable().or(z.literal("")),
+  bill_date: z.string().refine((v) => !isNaN(Date.parse(v)), { message: "Invalid date" }),
+  due_date: z.string().optional().nullable().or(z.literal("")),
+  category: z.string().optional().nullable().or(z.literal("")),
+  amount: z.coerce.number().min(0, "Amount required"),
+  vat_amount: z.coerce.number().min(0).default(0),
+  notes: z.string().optional().nullable().or(z.literal("")),
+});
+
+export const paymentSchema = z.object({
+  amount: z.coerce.number().min(0.01, "Amount required"),
+  payment_date: z.string().refine((v) => !isNaN(Date.parse(v)), { message: "Invalid date" }),
+  method: z.enum(["cash", "card", "bank_transfer"]).default("cash"),
+  notes: z.string().optional().nullable().or(z.literal("")),
 });
 
 export const quotationSchema = z.object({
@@ -118,6 +163,7 @@ export const invoiceSchema = z.object({
     description: z.string().min(1, "Description required"),
     quantity: z.coerce.number().min(1),
     unit_price: z.coerce.number().min(0),
+    cost_price: z.coerce.number().min(0).default(0),
     item_type: z.enum(["service", "part", "labor"]),
   })).min(1, "At least one item required"),
   tax_rate: z.coerce.number().default(5),

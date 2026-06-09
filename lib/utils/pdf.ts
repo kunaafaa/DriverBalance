@@ -623,3 +623,207 @@ export const generateDiagnosticReportPDF = (
 
   doc.save(`DM-${report.report_number}-diagnostic-report.pdf`);
 };
+
+const PNL_CATEGORY_LABELS: Record<string, string> = {
+  rent: "Rent",
+  salaries: "Salaries",
+  cogs_parts: "COGS (Parts)",
+  tools: "Tools",
+  marketing: "Marketing",
+  utilities: "Utilities",
+  subscriptions: "Subscriptions",
+  bank_fees: "Bank Fees",
+  other: "Other",
+};
+
+export const generatePnLPDF = async (
+  data: {
+    revenue: number;
+    expensesByCategory: Record<string, number>;
+    totalExpenses: number;
+    netProfit: number;
+    margin: number;
+  },
+  from: string,
+  to: string
+): Promise<void> => {
+  const doc = new jsPDF() as any;
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const margin = 20;
+  const contentWidth = pageWidth - margin * 2;
+  let y = 24;
+
+  const loadImageDataUrl = (src: string): Promise<string | null> =>
+    fetch(src)
+      .then((res) => res.blob())
+      .then(
+        (blob) =>
+          new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+          })
+      )
+      .catch(() => null);
+
+  const [sixthGearLogo, dmLogo] = await Promise.all([
+    loadImageDataUrl("/sixth-gear-logo.png"),
+    loadImageDataUrl("/dm.png"),
+  ]);
+
+  // ===== Branding row — same as invoice PDF =====
+  const sgLogoSize = 16;
+  const brandTextX = margin + sgLogoSize + 6;
+  if (sixthGearLogo) doc.addImage(sixthGearLogo, "PNG", margin, y - 7, sgLogoSize, sgLogoSize);
+  doc.setFontSize(14);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(13, 13, 13);
+  doc.text("Sixth Gear Garage", brandTextX, y - 2);
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(107, 114, 128);
+  doc.text("ABU DHABI, UAE", brandTextX, y + 3.5);
+
+  if (dmLogo) {
+    const dmHeight = 26.5;
+    const dmWidth = dmHeight * (1280 / 1804);
+    doc.addImage(dmLogo, "PNG", pageWidth - margin - dmWidth, y - 12.25, dmWidth, dmHeight);
+  }
+
+  y += 17;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 24, 39);
+  doc.text("TRN: 100234567800003", margin, y);
+
+  y += 11;
+
+  // ===== Report title + period =====
+  doc.setFontSize(18);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 24, 39);
+  doc.text("PROFIT & LOSS SUMMARY", margin, y);
+  y += 7;
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "normal");
+  doc.setTextColor(107, 114, 128);
+  doc.text("Period: " + from + "  to  " + to, margin, y);
+  y += 12;
+
+  // ===== Three summary metric boxes =====
+  const boxW = (contentWidth - 8) / 3;
+  const boxes: { label: string; value: string; color: RGB }[] = [
+    { label: "REVENUE", value: formatCurrency(data.revenue), color: [22, 163, 74] },
+    { label: "TOTAL EXPENSES", value: formatCurrency(data.totalExpenses), color: [220, 38, 38] },
+    {
+      label: "NET PROFIT",
+      value: formatCurrency(data.netProfit),
+      color: data.netProfit >= 0 ? [22, 163, 74] : [220, 38, 38],
+    },
+  ];
+
+  boxes.forEach((box, i) => {
+    const bx = margin + i * (boxW + 4);
+    doc.setFillColor(245, 245, 245);
+    doc.roundedRect(bx, y, boxW, 20, 2, 2, "F");
+    doc.setFontSize(6.5);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(107, 114, 128);
+    doc.text(box.label, bx + 4, y + 6.5);
+    doc.setFontSize(11);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(box.color[0], box.color[1], box.color[2]);
+    doc.text(box.value, bx + 4, y + 15);
+  });
+
+  y += 26;
+
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(107, 114, 128);
+  doc.text(`Net Margin: ${data.margin.toFixed(1)}%`, pageWidth - margin, y, { align: "right" });
+  y += 8;
+
+  // ===== Expense breakdown table =====
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 24, 39);
+  doc.text("EXPENSE BREAKDOWN", margin, y);
+  y += 6;
+
+  const catRows = Object.entries(data.expensesByCategory).filter(([cat]) => cat !== "bills_ap").map(([cat, val]) => [
+    PNL_CATEGORY_LABELS[cat] || cat,
+    formatCurrency(val),
+    data.totalExpenses > 0 ? ((val / data.totalExpenses) * 100).toFixed(1) + "%" : "—",
+  ]);
+
+  y = drawSimpleTable(
+    doc,
+    y,
+    margin,
+    contentWidth,
+    ["CATEGORY", "AMOUNT (AED)", "% OF EXPENSES"],
+    catRows,
+    [contentWidth * 0.5, contentWidth * 0.28, contentWidth * 0.22],
+    { align: ["left", "right", "right"], headFill: [17, 24, 39] }
+  );
+
+  // Revenue row
+  doc.setFillColor(240, 253, 244);
+  doc.rect(margin, y, contentWidth, 8, "F");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 24, 39);
+  doc.text("Revenue (payments received)", margin + 3, y + 5.5);
+  doc.setTextColor(22, 163, 74);
+  doc.text(formatCurrency(data.revenue), pageWidth - margin - 3, y + 5.5, { align: "right" });
+  y += 8;
+
+  // Total expenses row
+  doc.setFillColor(253, 240, 240);
+  doc.rect(margin, y, contentWidth, 8, "F");
+  doc.setFontSize(8);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(17, 24, 39);
+  doc.text("Total Expenses", margin + 3, y + 5.5);
+  doc.setTextColor(220, 38, 38);
+  doc.text(formatCurrency(data.totalExpenses), pageWidth - margin - 3, y + 5.5, { align: "right" });
+  y += 8;
+
+  // Net profit row (dark background, two-line layout)
+  const profitColor: RGB = data.netProfit >= 0 ? [34, 197, 94] : [239, 68, 68];
+  doc.setFillColor(17, 24, 39);
+  doc.rect(margin, y, contentWidth, 12, "F");
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(255, 255, 255);
+  doc.text("NET PROFIT", margin + 3, y + 5);
+  doc.setTextColor(profitColor[0], profitColor[1], profitColor[2]);
+  doc.text(formatCurrency(data.netProfit), pageWidth - margin - 3, y + 5, { align: "right" });
+  doc.setFontSize(7);
+  doc.setTextColor(156, 163, 175);
+  doc.text(`Margin: ${data.margin.toFixed(1)}%`, pageWidth - margin - 3, y + 9.5, { align: "right" });
+  y += 18;
+
+  doc.setFontSize(7);
+  doc.setFont("helvetica", "italic");
+  doc.setTextColor(156, 163, 175);
+  doc.text("Internal use only. Not a ledger — confirm with your accountant before filing.", margin, y);
+
+  // ===== Top purple/dark bar + bottom black bar on every page (matches invoice) =====
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFillColor(168, 85, 247);
+    doc.rect(0, 0, pageWidth, 3, "F");
+    doc.setFillColor(17, 24, 39);
+    doc.rect(0, 3, pageWidth, 3, "F");
+    doc.setFillColor(0, 0, 0);
+    doc.rect(0, pageHeight - 4, pageWidth, 4, "F");
+  }
+
+  doc.save(`pnl-${from}-to-${to}.pdf`);
+};
