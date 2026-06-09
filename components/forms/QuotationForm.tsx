@@ -11,6 +11,80 @@ import axios from "axios";
 
 type QuotationFormData = z.infer<typeof quotationSchema>;
 
+function parsePastedLine(line: string): { description: string; quantity: number; unit_price: number; item_type: ItemType } {
+  const PART_KEYWORDS = ["filter", "oil", "tyre", "tire", "brake", "sensor", "belt", "fluid", "bulb", "battery", "wiper", "plug", "bearing", "seal", "gasket", "disc", "rotor", "pump", "hose", "cap", "pad", "part"];
+  let desc = line.trim();
+  let quantity = 1;
+  let unit_price = 0;
+
+  if (line.includes("|")) {
+    const segments = line.split("|").map((s) => s.trim()).filter(Boolean);
+    let descIdx = 0, qtyIdx = -1, priceIdx = -1;
+    if (segments.length >= 2 && /^\d+$/.test(segments[0])) {
+      descIdx = 1; qtyIdx = 2; priceIdx = 3;
+    } else {
+      descIdx = 0; qtyIdx = 1; priceIdx = 2;
+    }
+    desc = segments[descIdx] ?? "";
+    const qSeg = qtyIdx >= 0 ? segments[qtyIdx] : undefined;
+    if (qSeg) { const m = qSeg.match(/(\d+)/); if (m) quantity = parseInt(m[1], 10); }
+    const pSeg = priceIdx >= 0 ? segments[priceIdx] : undefined;
+    if (pSeg) { const m = pSeg.replace(/,/g, "").match(/(\d+(?:\.\d+)?)/); if (m) unit_price = parseFloat(m[1]) || 0; }
+  } else {
+    const qtyRules: Array<[RegExp, number]> = [
+      [/\bx\s*(\d+)\b/i, 1],
+      [/\b(\d+)\s*x\b/i, 1],
+      [/\bqty\s*:?\s*(\d+)\b/i, 1],
+    ];
+    for (const [re, g] of qtyRules) {
+      const m = desc.match(re);
+      if (m) { quantity = parseInt(m[g], 10); desc = desc.replace(m[0], "").trim(); break; }
+    }
+
+    const aedM = desc.match(/\bAED\s*([\d,]+(?:\.\d+)?)/i);
+    if (aedM) {
+      unit_price = parseFloat(aedM[1].replace(/,/g, "")) || 0;
+      desc = desc.replace(aedM[0], "").trim();
+    } else {
+      const eachM = desc.match(/([\d,]+(?:\.\d+)?)\s*each\b/i);
+      if (eachM) {
+        unit_price = parseFloat(eachM[1].replace(/,/g, "")) || 0;
+        desc = desc.replace(eachM[0], "").trim();
+      } else {
+        const dashM = desc.match(/\s*-\s*([\d,]+(?:\.\d+)?)\s*$/);
+        if (dashM) {
+          unit_price = parseFloat(dashM[1].replace(/,/g, "")) || 0;
+          desc = desc.replace(dashM[0], "").trim();
+        } else {
+          const colonM = desc.match(/:\s*([\d,]+(?:\.\d+)?)\s*$/);
+          if (colonM) {
+            unit_price = parseFloat(colonM[1].replace(/,/g, "")) || 0;
+            desc = desc.replace(colonM[0], "").trim();
+          } else {
+            const lastM = desc.match(/\s([\d,]+(?:\.\d+)?)\s*$/);
+            if (lastM) {
+              unit_price = parseFloat(lastM[1].replace(/,/g, "")) || 0;
+              desc = desc.replace(lastM[0], "").trim();
+            }
+          }
+        }
+      }
+    }
+
+    desc = desc
+      .replace(/\+\s*VAT\b/gi, "")
+      .replace(/\beach\b/gi, "")
+      .replace(/\bAED\b/gi, "")
+      .replace(/^\d+[\.\)]\s*/, "")
+      .replace(/[:\-,|]+\s*$/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  const item_type: ItemType = PART_KEYWORDS.some((k) => desc.toLowerCase().includes(k)) ? "part" : "service";
+  return { description: desc, quantity, unit_price, item_type };
+}
+
 interface QuotationFormProps {
   initialData?: Quotation;
   onSubmit: (data: QuotationFormData) => Promise<void>;
@@ -58,6 +132,33 @@ export default function QuotationForm({ initialData, onSubmit, onCancel }: Quota
   const subtotal = watchedItems.reduce((acc, item) => acc + (item.quantity * item.unit_price || 0), 0);
   const taxAmount = (subtotal * (watchedTaxRate || 0)) / 100;
   const total = subtotal + taxAmount - (watchedDiscount || 0);
+
+  const handleDescriptionPaste = (index: number, e: React.ClipboardEvent<HTMLInputElement>) => {
+    const text = e.clipboardData.getData("text");
+    const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
+    if (lines.length < 2) return;
+    e.preventDefault();
+
+    const parsed = lines.map(parsePastedLine);
+    const currentItems = watchedItems ?? [];
+    const emptyIndices: number[] = [];
+    for (let i = 0; i < currentItems.length; i++) {
+      if (!currentItems[i]?.description) emptyIndices.push(i);
+    }
+    const fillQueue = [index, ...emptyIndices.filter((i) => i !== index)];
+
+    parsed.forEach((item, i) => {
+      if (i < fillQueue.length) {
+        const rowIdx = fillQueue[i];
+        setValue(`items.${rowIdx}.description` as any, item.description);
+        setValue(`items.${rowIdx}.quantity` as any, item.quantity);
+        setValue(`items.${rowIdx}.unit_price` as any, item.unit_price);
+        setValue(`items.${rowIdx}.item_type` as any, item.item_type);
+      } else {
+        append({ description: item.description, quantity: item.quantity, unit_price: item.unit_price, item_type: item.item_type });
+      }
+    });
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -328,6 +429,7 @@ export default function QuotationForm({ initialData, onSubmit, onCancel }: Quota
               <div className="col-span-12 md:col-span-5 space-y-1">
                 <input
                   {...register(`items.${index}.description`)}
+                  onPaste={(e) => handleDescriptionPaste(index, e)}
                   placeholder="Item description (Service or Part)"
                   className="w-full px-4 py-2 bg-[#111111] border-none rounded-xl text-sm font-medium outline-none focus:bg-[#0D0D0D] focus:ring-2 focus:ring-[#A855F7]"
                 />
