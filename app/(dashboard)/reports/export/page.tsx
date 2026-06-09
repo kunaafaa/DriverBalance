@@ -4,13 +4,40 @@ import { useState } from "react";
 import axios from "axios";
 import { Download, FileSpreadsheet, Loader2 } from "lucide-react";
 
-function firstOfMonth() {
-  const d = new Date();
-  return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split("T")[0];
-}
-function today() {
-  return new Date().toISOString().split("T")[0];
-}
+type RangeKey = "30d" | "6m" | "1y";
+
+const RANGES: { key: RangeKey; label: string; getDates: () => { from: string; to: string } }[] = [
+  {
+    key: "30d",
+    label: "Last 30 Days",
+    getDates: () => {
+      const to = new Date();
+      const from = new Date();
+      from.setDate(from.getDate() - 29);
+      return { from: from.toISOString().split("T")[0], to: to.toISOString().split("T")[0] };
+    },
+  },
+  {
+    key: "6m",
+    label: "Last 6 Months",
+    getDates: () => {
+      const to = new Date();
+      const from = new Date();
+      from.setMonth(from.getMonth() - 6);
+      return { from: from.toISOString().split("T")[0], to: to.toISOString().split("T")[0] };
+    },
+  },
+  {
+    key: "1y",
+    label: "Last Year",
+    getDates: () => {
+      const to = new Date();
+      const from = new Date();
+      from.setFullYear(from.getFullYear() - 1);
+      return { from: from.toISOString().split("T")[0], to: to.toISOString().split("T")[0] };
+    },
+  },
+];
 
 const EXPORTS = [
   { type: "sales", label: "Sales (Invoices)", desc: "number, date, customer, subtotal, VAT, total, status, amount paid" },
@@ -21,9 +48,17 @@ const EXPORTS = [
 ];
 
 export default function ExportReportPage() {
-  const [from, setFrom] = useState(firstOfMonth());
-  const [to, setTo] = useState(today());
+  const [activeRange, setActiveRange] = useState<RangeKey>("30d");
+  const [from, setFrom] = useState(() => RANGES[0].getDates().from);
+  const [to, setTo] = useState(() => RANGES[0].getDates().to);
   const [downloading, setDownloading] = useState<string | null>(null);
+
+  const handleRangeSelect = (r: typeof RANGES[number]) => {
+    const dates = r.getDates();
+    setActiveRange(r.key);
+    setFrom(dates.from);
+    setTo(dates.to);
+  };
 
   const handleDownload = async (type: string, filenameBase: string) => {
     setDownloading(type);
@@ -56,20 +91,20 @@ export default function ExportReportPage() {
           <h1 className="text-3xl font-black tracking-tight text-white">Accountant Export</h1>
           <p className="text-gray-500 font-medium">Clean, categorized Excel files (.xlsx) your accountant can open in any spreadsheet app.</p>
         </div>
-        <div className="flex items-center gap-3 bg-[#0D0D0D] p-3 rounded-2xl border border-[#1A1A1A]">
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="bg-[#111111] px-3 py-2 rounded-xl border border-[#1A1A1A] text-gray-300 text-sm font-bold outline-none"
-          />
-          <span className="text-gray-500 text-sm">→</span>
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="bg-[#111111] px-3 py-2 rounded-xl border border-[#1A1A1A] text-gray-300 text-sm font-bold outline-none"
-          />
+        <div className="flex items-center gap-1.5 bg-[#0D0D0D] p-1.5 rounded-2xl border border-[#1A1A1A]">
+          {RANGES.map((r) => (
+            <button
+              key={r.key}
+              onClick={() => handleRangeSelect(r)}
+              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all ${
+                activeRange === r.key
+                  ? "bg-[#A855F7] text-white shadow-lg shadow-[#A855F7]/20"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
         </div>
       </div>
 

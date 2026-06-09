@@ -189,6 +189,7 @@ export default function QuotationDetailPage() {
                 width={64}
                 height={64}
                 className="object-contain"
+                loading="lazy"
               />
               <div className="flex flex-col">
                 <span className="text-xl font-black tracking-tighter leading-none text-[#0D0D0D]">
@@ -205,6 +206,7 @@ export default function QuotationDetailPage() {
               width={100}
               height={100}
               className="object-contain"
+              loading="lazy"
             />
           </div>
 
@@ -309,7 +311,7 @@ export default function QuotationDetailPage() {
           {/* Signature Block */}
           <div className="flex justify-end mt-8">
             <div className="mt-8 print:mt-2 text-center flex flex-col items-center pt-8 print:pt-2 mb-8">
-              <img src="/sign.png" alt="Signature" className="h-16 object-contain mb-1 mx-auto" />
+              <img src="/sign.png" alt="Signature" className="h-16 object-contain mb-1 mx-auto" loading="lazy" />
               <div className="h-[2px] w-40 bg-[#A855F7] mx-auto"></div>
               <p className="mt-1 text-[10px] font-bold uppercase text-[#111827] text-center">Authorized Signature</p>
             </div>
