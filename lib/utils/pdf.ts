@@ -252,6 +252,23 @@ export const generateInvoicePDF = async (
     }
   ) + 12;
 
+  // ===== Notes (only rendered when invoice.notes is non-empty) =====
+  if (invoice.notes && invoice.notes.trim()) {
+    ensureSpace(20);
+    doc.setFontSize(7);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(17, 24, 39);
+    doc.text("NOTES:", margin, y);
+    y += 5;
+    doc.setFontSize(8);
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(51, 65, 85);
+    const noteLines = doc.splitTextToSize(invoice.notes.trim(), contentWidth);
+    ensureSpace(noteLines.length * 4.5 + 4);
+    doc.text(noteLines, margin, y);
+    y += noteLines.length * 4.5 + 8;
+  }
+
   // ===== Totals (right) + "Thank you" (left) =====
   ensureSpace(50);
   doc.setFontSize(9);

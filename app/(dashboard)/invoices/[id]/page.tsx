@@ -316,9 +316,17 @@ This is an official invoice issued by DriverMade Automotive Services, Musaffah, 
             </tbody>
           </table>
 
+          {/* Notes */}
+          {invoice.notes && invoice.notes.trim() && (
+            <div className="mt-4 mb-6">
+              <p className="text-[10px] font-bold uppercase tracking-wide text-[#111827] mb-1">NOTES</p>
+              <p className="text-xs text-gray-700 whitespace-pre-wrap">{invoice.notes}</p>
+            </div>
+          )}
+
           {/* Totals + Thank You */}
           <div className="flex justify-between items-end text-sm text-[#111827] mb-6">
-            <p className="italic text-gray-500 text-sm">Thank you for your business!</p>
+            <p className="italic text-gray-500 text-sm">Thank you for choosing DriverMade.</p>
             <table>
               <tbody>
                 <tr>
