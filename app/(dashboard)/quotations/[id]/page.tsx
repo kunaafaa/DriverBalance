@@ -279,7 +279,7 @@ export default function QuotationDetailPage() {
 
           {/* Totals + Thank You */}
           <div className="flex justify-between items-end text-sm text-[#111827] mb-6">
-            <p className="italic text-gray-500 text-sm">Thank you for your business!</p>
+            <p className="italic text-gray-500 text-sm">Thank you for choosing DriverMade.</p>
             <table>
               <tbody>
                 <tr>

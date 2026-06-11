@@ -274,7 +274,7 @@ export const generateInvoicePDF = async (
   doc.setFontSize(9);
   doc.setFont("helvetica", "italic");
   doc.setTextColor(107, 114, 128);
-  doc.text("Thank you for your business!", margin, y + 14);
+  doc.text("Thank you for choosing DriverMade.", margin, y + 14);
 
   const totalsLabelX = pageWidth - margin - 34;
   const totalsValueX = pageWidth - margin;
